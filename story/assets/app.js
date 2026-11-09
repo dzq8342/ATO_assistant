@@ -3917,6 +3917,8 @@
       ensureStoryAudioManifest().then(() => prewarmLinkedEntries(entry));
     }, 200);
     window.scrollTo({ top: 0, behavior: "smooth" });
+    // 私人版：宽屏时正文在 .reader 里单独滚动，跳转条目后也要回到正文顶部。
+    document.querySelector(".reader")?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function jumpToId(id, options = {}) {

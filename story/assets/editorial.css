@@ -85,3 +85,16 @@ button { font-weight: 600; }
   .sidebar, .reader-actions { display: none; }
   .reader { margin: 0; padding: 0; border: 0; }
 }
+
+/* 私人版：宽屏（> 820px）时左侧工具栏和右侧正文各自独立滚动。手机竖屏布局不受影响。 */
+@media (min-width: 821px) {
+  html:not(.ato-apk-portrait) body { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+  html:not(.ato-apk-portrait) body > .sidebar { height: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  html:not(.ato-apk-portrait) body > .reader {
+    box-sizing: border-box;
+    height: calc(100% - 48px);
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
