@@ -58,7 +58,7 @@ body[data-theme-module="technology"] .tree-wrap.tech-canvas { position: absolute
 @media (orientation: landscape) and (min-width: 900px) and (max-height: 900px) {
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) {
     display: grid;
-    grid-template-columns: 210px minmax(0, 1fr);
+    grid-template-columns: 160px minmax(0, 1fr);
     grid-template-rows: auto auto minmax(0, 1fr);
     height: 100vh; height: 100dvh;
     overflow: hidden;
@@ -71,7 +71,7 @@ body[data-theme-module="technology"] .tree-wrap.tech-canvas { position: absolute
     margin: 0; padding: 0 0 8px; min-height: 0; height: auto; border-bottom: 1px solid var(--line);
   }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .page-heading h1 { font-size: 20px; margin: 0; }
-  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .page-heading .return-main { width: 100%; padding: 6px 8px; font-size: 12px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .page-heading .return-main { width: 100%; padding: 6px 4px; font-size: 12px; }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .topbar {
     grid-column: 1; grid-row: 2;
     position: static; height: auto; margin: 0; padding: 8px 0;
@@ -83,7 +83,9 @@ body[data-theme-module="technology"] .tree-wrap.tech-canvas { position: absolute
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools { flex-wrap: wrap; gap: 6px; }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools .search { flex: 1 1 100%; min-width: 0; }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools { font-size: 12px; }
-  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools :is(.tool-btn, .badge) { padding: 4px 8px; font-size: 12px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools :is(.tool-btn, .badge) { padding: 4px 6px; font-size: 12px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools .tool-check { font-size: 12px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-progress { font-size: 11px; }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) #mainView {
     grid-column: 2; grid-row: 1 / span 3;
     min-height: 0; height: 100%; padding: 0; overflow: hidden;
@@ -92,7 +94,7 @@ body[data-theme-module="technology"] .tree-wrap.tech-canvas { position: absolute
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board { flex: 1; height: auto; min-height: 0; }
   /* 进度和缩放按钮挪到左栏底部 */
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-toolbar {
-    position: fixed; left: 8px; bottom: 8px; width: 210px; z-index: 6;
+    position: fixed; left: 8px; bottom: 8px; width: 160px; z-index: 6;
     flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 0 0;
     border-top: 1px solid var(--line); background: var(--bg);
   }
