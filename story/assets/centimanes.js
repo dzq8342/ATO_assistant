@@ -207,10 +207,18 @@
         reading.textContent = view.digits.map(n => n || "?").join("");
         reading.setAttribute("aria-label", "译文");
         const actions = document.createElement("div"); actions.className = "cent-actions";
-        actions.appendChild(makeButton("载入", () => {
-          const next = normalize(options.read()); next.draft = entry.glyphs.slice();
-          editing = false; closeEditor(); commit(next); status("已载入符号，当前译文使用现有数字对应。");
-        }));
+        // 私人版：「载入」改为「跳转」——4 位密文全部已知时，按译出的段落号读取对应段落；
+        // 任意一位未知（或不是 4 位）时按钮不可用，点击没有反应。
+        const code = view.digits.join("");
+        const canJump = view.digits.length === 4 && view.digits.every(Boolean) && typeof window === "object"
+          && typeof window.atoStoryReadParagraph === "function";
+        const jumpButton = makeButton("跳转", () => {
+          if (!canJump) return;
+          window.atoStoryReadParagraph(code);
+        });
+        jumpButton.disabled = !canJump;
+        jumpButton.title = canJump ? `读取段落 ${code}` : "密文还有未知数字，无法跳转";
+        actions.appendChild(jumpButton);
         actions.appendChild(makeButton("删除", () => {
           const next = normalize(options.read());
           removed = { id, entry: next.records[id], context: options.context() };

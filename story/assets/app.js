@@ -4972,6 +4972,13 @@
   });
 
   window.atoStoryNavigate = navigateToStoryTarget;
+  // 私人版：供百臂巨人语密文记录的「跳转」按钮使用，效果等同在段落号框输入后点「读取」。
+  window.atoStoryReadParagraph = (code) => {
+    const value = String(code || "").trim();
+    if (!/^\d{4}$/.test(value)) return;
+    searchInput.value = value;
+    goButton.click();
+  };
   // 信封段落的按钮只弹提示，不跳转（隐藏 BOSS 的剧透保护）。
   document.addEventListener("click", (event) => {
     const button = event.target.closest("[data-aibp-hint]");
