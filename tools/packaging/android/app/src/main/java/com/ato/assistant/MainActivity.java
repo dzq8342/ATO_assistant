@@ -317,13 +317,26 @@ public final class MainActivity extends Activity {
         notifyStoryTtsResult(id, false, "切换页面，朗读已停止");
       }
       activeTab.view.setVisibility(View.GONE);
+      activeTab.view.evaluateJavascript(TAB_HIDDEN_SCRIPT, null);
     }
     activeTab = tab;
     webView = tab.view;
     currentStorySession = tab.story;
     tab.view.setVisibility(View.VISIBLE);
+    tab.view.evaluateJavascript(TAB_SHOWN_SCRIPT, null);
     updateTabs(true);
   }
+
+  // 私人版：App 内的标签页只是把 WebView 设为 GONE，页面收不到 visibilitychange，
+  // 剧情书无法得知自己被切走（第二屏不会切回地图），地图也不会刷新「第二屏显示地图」。
+  // 切换标签页时补发与浏览器一致的可见性事件；关闭前同样先通知页面已隐藏。
+  private static final String TAB_HIDDEN_SCRIPT =
+      "(function(){try{Object.defineProperty(document,'hidden',{configurable:true,get:function(){return true;}});"
+      + "Object.defineProperty(document,'visibilityState',{configurable:true,get:function(){return 'hidden';}});"
+      + "document.dispatchEvent(new Event('visibilitychange'));}catch(e){}})();";
+  private static final String TAB_SHOWN_SCRIPT =
+      "(function(){try{if(Object.prototype.hasOwnProperty.call(document,'hidden')){delete document.hidden;delete document.visibilityState;"
+      + "document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));}}catch(e){}})();";
 
   private void closeTab(PageTab tab) {
     if (tab == null || tab.closed) return;
@@ -336,9 +349,16 @@ public final class MainActivity extends Activity {
     tabs.remove(tab);
     tab.closed = true;
     tab.requests.incrementAndGet();
-    if (tab.view.getParent() instanceof ViewGroup) ((ViewGroup) tab.view.getParent()).removeView(tab.view);
-    tab.view.removeJavascriptInterface("ATOAndroid");
-    tab.view.destroy();
+    // 私人版：先让页面收到「已隐藏」并把请求发出去（剧情书据此把第二屏切回地图），
+    // 稍后再销毁 WebView，避免请求随页面一起被掐断。
+    final WebView closingView = tab.view;
+    closingView.setVisibility(View.GONE);
+    closingView.evaluateJavascript(TAB_HIDDEN_SCRIPT, null);
+    closingView.postDelayed(() -> {
+      if (closingView.getParent() instanceof ViewGroup) ((ViewGroup) closingView.getParent()).removeView(closingView);
+      closingView.removeJavascriptInterface("ATOAndroid");
+      closingView.destroy();
+    }, 1500);
     updateTabs(false);
   }
 
