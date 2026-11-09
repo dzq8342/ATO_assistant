@@ -52,3 +52,47 @@ body[data-theme-module="technology"] .tree-wrap.tech-canvas { position: absolute
 @media (prefers-reduced-motion: reduce) { .tech-module.newly-discovered { animation: none; } }
 @media (max-width: 980px) { .viewport.tech-tree-view { padding: 8px 20px 24px; } }
 @media (max-width: 600px) { .tech-board-toolbar { align-items: flex-start; } .tech-module { scroll-margin-top: 110px; } }
+
+/* 私人版：平板横屏 / 矮屏（宽 ≥ 900px、高 ≤ 900px）时，科技树页面的标题、标签、工具移到右侧栏，
+   进度统计和缩放按钮放在右侧栏底部，科技树占满左侧全部高度。其他标签页（装备制造等）不受影响。 */
+@media (orientation: landscape) and (min-width: 900px) and (max-height: 900px) {
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    height: 100vh; height: 100dvh;
+    overflow: hidden;
+    column-gap: 10px;
+    padding: 8px;
+  }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .page-heading {
+    grid-column: 2; grid-row: 1;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px;
+    margin: 0; padding: 0 0 8px; min-height: 0; height: auto; border-bottom: 1px solid var(--line);
+  }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .page-heading h1 { font-size: 22px; margin: 0; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .page-heading .return-main { padding: 6px 10px; font-size: 13px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .topbar {
+    grid-column: 2; grid-row: 2;
+    position: static; height: auto; margin: 0; padding: 8px 0;
+    display: flex; flex-direction: column; align-items: stretch; gap: 8px;
+    border-bottom: 1px solid var(--line); background: transparent;
+  }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tabs { flex-wrap: wrap; gap: 4px 10px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools { flex-wrap: wrap; gap: 6px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools .search { flex: 1 1 140px; min-width: 0; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) #mainView {
+    grid-column: 1; grid-row: 1 / span 3;
+    min-height: 0; height: 100%; padding: 0; overflow: hidden;
+  }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-explorer { height: 100%; display: flex; flex-direction: column; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board { flex: 1; height: auto; min-height: 0; }
+  /* 进度和缩放按钮挪到右栏底部 */
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-toolbar {
+    position: fixed; right: 8px; bottom: 8px; width: 300px; z-index: 6;
+    flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 0 0;
+    border-top: 1px solid var(--line); background: var(--bg);
+  }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-controls { flex-wrap: wrap; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-controls button { flex: 1 1 auto; height: 34px; }
+}
