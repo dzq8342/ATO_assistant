@@ -96,3 +96,18 @@ body[data-theme-module="technology"] .tree-wrap.tech-canvas { position: absolute
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-controls { flex-wrap: wrap; }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-controls button { flex: 1 1 auto; height: 34px; }
 }
+
+/* 私人版：装备制造 / 军械库页面滚动时，右侧「当前资源量」固定在屏幕上方始终可见。
+   原设计靠 .gear-content 内部滚动，editorial.css 把它改成 overflow: visible 后变成整页滚动，
+   而 #mainView 的 overflow: auto 又让 sticky 失效，资源栏会随页面滚走。 */
+@media (min-width: 981px) {
+  body[data-theme-module="technology"] #mainView:has(> .gear-page) { overflow: visible; }
+  body[data-theme-module="technology"] .gear-page { height: auto; }
+  body[data-theme-module="technology"] .gear-layout { align-items: start; }
+  body[data-theme-module="technology"] .gear-resource-sidebar {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+  }
+}
