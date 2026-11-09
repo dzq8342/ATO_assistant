@@ -34,9 +34,16 @@ html.ato-apk-portrait[data-record-hero-page="record"] .identity-grid .number-fie
 html.ato-apk-portrait[data-record-hero-page="record"] .identity-grid .number-field :is(input,button){height:44px;min-height:44px;padding:0;min-width:0;width:100%}
 html.ato-apk-portrait[data-record-hero-page="record"] .identity-grid .oxygen-value-pair{grid-template-columns:44px max-content 44px}
 html.ato-apk-portrait[data-record-hero-page="record"] .identity-grid .oxygen-value-pair input{height:44px;min-height:44px;width:44px;padding:0}
-html.ato-apk-portrait[data-record-hero-page="record"] .resource-grid{grid-template-columns:minmax(0,1fr)}
-html.ato-apk-portrait[data-record-hero-page="record"] .resource-card .number-field{grid-template-columns:44px 44px minmax(44px,1fr) 44px 44px;gap:4px;width:100%;min-width:0}
-html.ato-apk-portrait[data-record-hero-page="record"] .resource-card .number-field :is(button,input){height:44px;min-height:44px;width:100%;min-width:0;padding-inline:0}
+/* 私人版：竖屏资源也排 3 列。数值框单独占第一行，-5 / - / + / +5 四个按钮排在第二行；
+   文字类资源和带格子轨道的资源（皮格马利翁之石、记忆之回响）占满整行。 */
+html.ato-apk-portrait[data-record-hero-page="record"] .resource-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+html.ato-apk-portrait[data-record-hero-page="record"] .resource-card{gap:5px;padding:6px;align-content:space-between}
+html.ato-apk-portrait[data-record-hero-page="record"] .resource-card:is(.text-resource,:has(.pygmalion-group)){grid-column:1/-1}
+html.ato-apk-portrait[data-record-hero-page="record"] .resource-heading{grid-template-columns:20px minmax(0,1fr);gap:5px;font-size:12px}
+html.ato-apk-portrait[data-record-hero-page="record"] .resource-face{width:20px;height:20px}
+html.ato-apk-portrait[data-record-hero-page="record"] .resource-card .number-field{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;width:100%;min-width:0}
+html.ato-apk-portrait[data-record-hero-page="record"] .resource-card .number-field input{grid-column:1/-1;grid-row:1;height:36px;min-height:36px;width:100%;min-width:0;padding-inline:0;text-align:center;font-size:16px}
+html.ato-apk-portrait[data-record-hero-page="record"] .resource-card .number-field button{grid-row:2;height:36px;min-height:36px;width:100%;min-width:0;padding-inline:0;font-size:13px}
 html.ato-apk-portrait[data-record-hero-page="record"] .resource-name{line-height:1.4;overflow-wrap:anywhere}
 html.ato-apk-portrait[data-record-hero-page="record"] .resource-name span{overflow-wrap:anywhere}
 html.ato-apk-portrait[data-record-hero-page="record"] .matrix-wrap{width:100%;max-width:100%;overflow:auto;overscroll-behavior:contain}
