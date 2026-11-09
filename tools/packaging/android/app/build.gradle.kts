@@ -36,7 +36,7 @@ android {
   compileSdk = 35
 
   defaultConfig {
-    applicationId = "com.ato.assistant"
+    applicationId = "com.ato.assistant.private"
     minSdk = 24
     targetSdk = 35
     versionCode = atoVersionCode ?: 1
