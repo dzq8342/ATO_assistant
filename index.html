@@ -1455,6 +1455,11 @@
       font-weight: 800;
     }
 
+    /* 私人版：官方中文下隐藏故事步骤定数框的英文副标题（Dreams of Pharos / Main Story / Special Events）。 */
+    html[data-ato-language="official"] .survey-constant-subtitle {
+      display: none;
+    }
+
     .survey-constant-boxes {
       display: grid;
       gap: 5px;
@@ -8264,7 +8269,7 @@
 
       const title = document.createElement("div");
       title.className = "survey-constant-title";
-      title.innerHTML = `${escapeHtml(data.title)}${options.subtitle ? ` <span>${escapeHtml(options.subtitle)}</span>` : ""}`;
+      title.innerHTML = `${escapeHtml(data.title)}${options.subtitle ? ` <span class="survey-constant-subtitle">${escapeHtml(options.subtitle)}</span>` : ""}`;
       if (data.subtitle || options.subtitle) title.dataset.englishText = data.subtitle || options.subtitle;
       const boxes = document.createElement("div");
       boxes.className = "survey-constant-boxes";

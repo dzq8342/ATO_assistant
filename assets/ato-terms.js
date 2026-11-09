@@ -2145,6 +2145,17 @@ window.ATO_TERMS = [
   // 冒险中枢显示为「分支冒险」；其他页面仍按全局条目显示。
   { "from": "R&R", "to": "休整冒险", "scope": "body[data-theme-dashboard]" },
   { "from": "冒险中枢", "to": "分支冒险", "scope": "body[data-theme-dashboard]" },
+  // 主控台残留英文：顶部故事集选择、勘察步骤分支总表表头。C4/C5 故事集名暂不处理。
+  { "from": "当前 Cycle", "to": "当前故事集", "scope": "body[data-theme-dashboard]" },
+  { "from": "Cycle 1: Truth of the Labyrinth", "to": "故事集 1：迷宫的真理", "scope": "body[data-theme-dashboard]" },
+  { "from": "Cycle 2: Abysswatchers", "to": "故事集 2：深渊凝望者", "scope": "body[data-theme-dashboard]" },
+  { "from": "Cycle 3: Pitiless of the Sun", "to": "故事集 3：无情烈日", "scope": "body[data-theme-dashboard]" },
+  { "from": "Story I", "to": "剧情 I", "scope": "body[data-theme-dashboard]" },
+  { "from": "Story II", "to": "剧情 II", "scope": "body[data-theme-dashboard]" },
+  { "from": "Story III", "to": "剧情 III", "scope": "body[data-theme-dashboard]" },
+  { "from": "Story IV", "to": "剧情 IV", "scope": "body[data-theme-dashboard]" },
+  { "from": "Adventure Hub", "to": "冒险分支对照表", "scope": "body[data-theme-dashboard]" },
+  { "from": "Battle Terrain", "to": "冒险地形", "scope": "body[data-theme-dashboard]" },
   // 勘察步骤的定数框（data-term-scope=survey-record）装的是分支总表 / 分支卡 / R&R 卡，
   // 标题显示为「冒险分支对照表」；故事步骤的三个定数框不在这个作用域里，保持原样。
   { "from": "定数框", "to": "冒险分支对照表", "scope": "[data-term-scope~=\"survey-record\"]" },
