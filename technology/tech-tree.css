@@ -58,7 +58,7 @@ body[data-theme-module="technology"] .tree-wrap.tech-canvas { position: absolute
 @media (orientation: landscape) and (min-width: 900px) and (max-height: 900px) {
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) {
     display: grid;
-    grid-template-columns: 300px minmax(0, 1fr);
+    grid-template-columns: 210px minmax(0, 1fr);
     grid-template-rows: auto auto minmax(0, 1fr);
     height: 100vh; height: 100dvh;
     overflow: hidden;
@@ -70,17 +70,20 @@ body[data-theme-module="technology"] .tree-wrap.tech-canvas { position: absolute
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px;
     margin: 0; padding: 0 0 8px; min-height: 0; height: auto; border-bottom: 1px solid var(--line);
   }
-  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .page-heading h1 { font-size: 22px; margin: 0; }
-  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .page-heading .return-main { padding: 6px 10px; font-size: 13px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .page-heading h1 { font-size: 20px; margin: 0; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .page-heading .return-main { width: 100%; padding: 6px 8px; font-size: 12px; }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .topbar {
     grid-column: 1; grid-row: 2;
     position: static; height: auto; margin: 0; padding: 8px 0;
     display: flex; flex-direction: column; align-items: stretch; gap: 8px;
     border-bottom: 1px solid var(--line); background: transparent;
   }
-  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tabs { flex-wrap: wrap; gap: 4px 10px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tabs { flex-wrap: wrap; gap: 2px 8px; font-size: 13px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tabs .tab { font-size: 13px; }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools { flex-wrap: wrap; gap: 6px; }
-  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools .search { flex: 1 1 140px; min-width: 0; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools .search { flex: 1 1 100%; min-width: 0; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools { font-size: 12px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools :is(.tool-btn, .badge) { padding: 4px 8px; font-size: 12px; }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) #mainView {
     grid-column: 2; grid-row: 1 / span 3;
     min-height: 0; height: 100%; padding: 0; overflow: hidden;
@@ -89,12 +92,18 @@ body[data-theme-module="technology"] .tree-wrap.tech-canvas { position: absolute
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board { flex: 1; height: auto; min-height: 0; }
   /* 进度和缩放按钮挪到左栏底部 */
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-toolbar {
-    position: fixed; left: 8px; bottom: 8px; width: 300px; z-index: 6;
+    position: fixed; left: 8px; bottom: 8px; width: 210px; z-index: 6;
     flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 0 0;
     border-top: 1px solid var(--line); background: var(--bg);
   }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-controls { flex-wrap: wrap; }
-  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-controls button { flex: 1 1 auto; height: 34px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-controls { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-controls > * { grid-column: span 2; min-width: 0; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-controls button { height: 32px; padding: 0 4px; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-controls :is([data-tree-control="reset"], [data-tree-control="fit"]) { grid-column: span 3; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-board-controls [data-tree-control="ready"] { grid-column: 1 / -1; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-zoom-value { align-self: center; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tech-progress { gap: 2px 10px; }
 }
 
 /* 私人版：装备制造 / 军械库页面滚动时，右侧「当前资源量」固定在屏幕上方始终可见。
