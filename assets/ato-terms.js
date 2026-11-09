@@ -2141,6 +2141,13 @@ window.ATO_TERMS = [
     "from": "金缮法洛斯",
     "to": "金缮航标"
   },
+  // 主控台（body[data-theme-dashboard]）内：单独出现的 R&R 也用「休整冒险」（与上面 R&R 冒险 一致），
+  // 冒险中枢显示为「分支冒险」；其他页面仍按全局条目显示。
+  { "from": "R&R", "to": "休整冒险", "scope": "body[data-theme-dashboard]" },
+  { "from": "冒险中枢", "to": "分支冒险", "scope": "body[data-theme-dashboard]" },
+  // 勘察步骤的定数框（data-term-scope=survey-record）装的是分支总表 / 分支卡 / R&R 卡，
+  // 标题显示为「冒险分支对照表」；故事步骤的三个定数框不在这个作用域里，保持原样。
+  { "from": "定数框", "to": "冒险分支对照表", "scope": "[data-term-scope~=\"survey-record\"]" },
   // 官方 App 1.1.22 中英表：lbl_C3DP「航标梦境」= Dreams of Pharos。
   {
     "from": "法洛斯之梦",
