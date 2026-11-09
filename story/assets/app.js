@@ -3727,8 +3727,58 @@
       secondScreenModeFailure = `切换第二屏显示失败：${result.error}`;
       console.warn("第二屏显示模式切换失败：", result.error);
     }
+    if (result.ok) secondScreenAutoStory = requestedMode === "story";
     secondScreenModeBusy = false;
     await refreshSecondScreenStoryModeToggle();
+  }
+
+  // 私人版：剧情书页面在前台时，第二屏自动显示剧情书；切走或关闭剧情书后，第二屏切回
+  // 原来的画面（默认地图；进剧情书前正在显示 AIBP 决战版图的，就回到 AIBP）。
+  // 页面上的「第二屏显示文本」勾选框仍可手动切换，手动取消后直到下次回到前台前都不会再自动切。
+  let secondScreenAutoStory = false;
+  let secondScreenModeBeforeStory = "map";
+  let secondScreenAutoBusy = false;
+
+  async function autoShowStoryOnSecondScreen() {
+    if (!secondScreenStoryModeToggle || secondScreenModeBusy || secondScreenAutoBusy || document.hidden) return;
+    secondScreenAutoBusy = true;
+    try {
+      const response = await fetch(secondScreenStatusUrl, { cache: "no-store" });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok || !payload.enabled || document.hidden) return;
+      if (payload.displayMode === "story") {
+        secondScreenAutoStory = true;
+        return;
+      }
+      secondScreenModeBeforeStory = payload.displayMode === "aibp" ? "aibp" : "map";
+      scheduleSecondScreenStorySnapshot();
+      const result = await setSecondScreenMode("story");
+      if (result.ok) {
+        secondScreenAutoStory = true;
+        secondScreenModeFailure = "";
+      }
+    } catch {
+      /* 第二屏未开启或网络异常时保持原样 */
+    } finally {
+      secondScreenAutoBusy = false;
+      void refreshSecondScreenStoryModeToggle();
+    }
+  }
+
+  function restoreSecondScreenAfterStory() {
+    if (!secondScreenAutoStory) return;
+    secondScreenAutoStory = false;
+    try {
+      // keepalive：页面正在关闭或跳转时请求也能发出去。
+      fetch(secondScreenModeUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: secondScreenModeBeforeStory }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch {
+      /* ignore */
+    }
   }
 
   // C5 的 AI 翻译条目按普通条目排版（见 renderStory）：用同一套分段/正文渲染，不再有
@@ -4927,9 +4977,22 @@
     event.preventDefault();
     showEnvelopeAibpHint(button.dataset.aibpHint);
   });
-  window.addEventListener("focus", refreshSecondScreenStoryModeToggle);
+  window.addEventListener("focus", () => {
+    refreshSecondScreenStoryModeToggle();
+    void autoShowStoryOnSecondScreen();
+  });
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) refreshSecondScreenStoryModeToggle();
+    if (!document.hidden) {
+      refreshSecondScreenStoryModeToggle();
+      void autoShowStoryOnSecondScreen();
+    } else {
+      restoreSecondScreenAfterStory();
+    }
+  });
+  window.addEventListener("pagehide", restoreSecondScreenAfterStory);
+  // 从往返缓存恢复（浏览器后退回到剧情书）时重新接管第二屏。
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) void autoShowStoryOnSecondScreen();
   });
   window.addEventListener("message", (event) => {
     if (window.location.protocol !== "file:" && event.origin !== window.location.origin) return;
@@ -4972,5 +5035,6 @@
 
   init();
   refreshSecondScreenStoryModeToggle();
+  void autoShowStoryOnSecondScreen();
   void readStorySection().catch(() => {});
 })();
