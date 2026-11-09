@@ -47,8 +47,18 @@ html.ato-apk-portrait.source-technology-mobile .source-gear-controls .arsenal-ad
 html.ato-apk-portrait.source-technology-mobile .source-gear-controls .arsenal-add select{ width: 100%; max-width: 100%; min-width: 0; }
 html.ato-apk-portrait.source-technology-mobile .gear-group-header{ flex-wrap: wrap; gap: 8px; }
 html.ato-apk-portrait.source-technology-mobile .gear-group-name{ overflow-wrap: anywhere; font-size: 18px; }
-html.ato-apk-portrait.source-technology-mobile .gear-items{ grid-template-columns: minmax(0, 1fr); gap: 14px; }
-html.ato-apk-portrait.source-technology-mobile .gear-item{ min-width: 0; padding: 10px 0; }
+/* 私人版：装备制造 / 军械库竖屏每行 2 张，卡图按屏高缩放，一屏可见 2×2 张。 */
+html.ato-apk-portrait.source-technology-mobile .gear-items{ grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+html.ato-apk-portrait.source-technology-mobile .gear-item{ min-width: 0; padding: 6px 0; }
+html.ato-apk-portrait.source-technology-mobile .gear-card-thumb{ display: block; width: auto; max-width: 100%; height: clamp(130px, calc((100dvh - 95px - 2 * 175px - 24px) / 2), 300px); margin: 0 auto 6px; }
+html.ato-apk-portrait.source-technology-mobile .arsenal-item .gear-card-thumb{ max-height: none; }
+html.ato-apk-portrait.source-technology-mobile .gear-item-name{ margin-bottom: 4px; font-size: 12px; }
+html.ato-apk-portrait.source-technology-mobile .gear-item-cost{ gap: 3px 4px; font-size: 10px; }
+html.ato-apk-portrait.source-technology-mobile .gear-cost-chip{ padding: 1px 4px; }
+html.ato-apk-portrait.source-technology-mobile .gear-stock{ font-size: 10px; }
+html.ato-apk-portrait.source-technology-mobile .gear-craft-panel{ margin-top: 5px; gap: 4px; }
+html.ato-apk-portrait.source-technology-mobile .gear-craft-btn{ min-height: 36px; padding: 4px 6px; font-size: 12px; }
+html.ato-apk-portrait.source-technology-mobile .gear-craft-status{ display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; font-size: 10px; }
 html.ato-apk-portrait.source-technology-mobile .gear-item-main{ min-width: 0; }
 html.ato-apk-portrait.source-technology-mobile .gear-item-name{ overflow-wrap: anywhere; }
 html.ato-apk-portrait.source-technology-mobile .unlocked-columns{ grid-template-columns: minmax(0, 1fr); }

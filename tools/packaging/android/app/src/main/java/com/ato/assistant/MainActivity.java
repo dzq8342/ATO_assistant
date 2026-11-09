@@ -147,6 +147,7 @@ public final class MainActivity extends Activity {
         scheduleMobileLayoutEnvironmentUpdate());
     layout.addView(rootView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
     setContentView(layout);
+    enterFullscreen();
     updateMobileLayoutEnvironment();
     openNewTab();
 
@@ -201,7 +202,8 @@ public final class MainActivity extends Activity {
     if (android.os.Build.VERSION.SDK_INT >= 30) {
       android.view.WindowMetrics metrics = getWindowManager().getCurrentWindowMetrics();
       android.graphics.Rect bounds = metrics.getBounds();
-      android.graphics.Insets bars = metrics.getWindowInsets().getInsetsIgnoringVisibility(
+      // 私人版全屏：系统栏隐藏后不再占位，只按当前实际可见的系统栏 / 刘海留边。
+      android.graphics.Insets bars = metrics.getWindowInsets().getInsets(
           android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());
       environment = MobileLayoutEnvironment.forWindow(bounds.width(), bounds.height(),
           bars.left, bars.top, bars.right, bars.bottom, dp(TOOLBAR_DP), density);
@@ -226,6 +228,32 @@ public final class MainActivity extends Activity {
       mobileLayoutUpdatePending = false;
       if (!isFinishing() && !isDestroyed()) updateMobileLayoutEnvironment();
     });
+  }
+
+  // 私人版：全屏运行，隐藏状态栏（时间、电量等）和导航栏；从屏幕边缘滑动可临时呼出。
+  @SuppressWarnings("deprecation")
+  private void enterFullscreen() {
+    if (android.os.Build.VERSION.SDK_INT >= 30) {
+      getWindow().setDecorFitsSystemWindows(false);
+      android.view.WindowInsetsController controller = getWindow().getInsetsController();
+      if (controller != null) {
+        controller.hide(android.view.WindowInsets.Type.statusBars() | android.view.WindowInsets.Type.navigationBars());
+        controller.setSystemBarsBehavior(android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+      }
+    } else {
+      getWindow().getDecorView().setSystemUiVisibility(
+          View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+              | View.SYSTEM_UI_FLAG_FULLSCREEN
+              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+    }
+  }
+
+  @Override public void onWindowFocusChanged(boolean hasFocus) {
+    super.onWindowFocusChanged(hasFocus);
+    if (hasFocus) enterFullscreen();
   }
 
   @Override public void onConfigurationChanged(Configuration configuration) {
