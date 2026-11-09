@@ -58,6 +58,8 @@ public final class MainActivity extends Activity {
     boolean loginPage;
     boolean dashboardAuthenticated;
   }
+  // 私人版：顶部标签栏由 48dp 调低为 36dp。
+  private static final int TOOLBAR_DP = 36;
   private final ArrayList<PageTab> tabs = new ArrayList<>();
   private PageTab activeTab;
   private HorizontalScrollView tabScroll;
@@ -130,15 +132,15 @@ public final class MainActivity extends Activity {
     tabStrip = new LinearLayout(this);
     tabStrip.setOrientation(LinearLayout.HORIZONTAL);
     tabScroll.addView(tabStrip);
-    toolbar.addView(tabScroll, new LinearLayout.LayoutParams(0, dp(48), 1));
+    toolbar.addView(tabScroll, new LinearLayout.LayoutParams(0, dp(TOOLBAR_DP), 1));
     TextView add = new TextView(this);
     add.setText("＋");
-    add.setTextSize(24);
+    add.setTextSize(20);
     add.setTextColor(Color.WHITE);
     add.setGravity(Gravity.CENTER);
     add.setContentDescription("打开新页面");
     add.setOnClickListener(v -> openNewTab());
-    toolbar.addView(add, new LinearLayout.LayoutParams(dp(48), dp(48)));
+    toolbar.addView(add, new LinearLayout.LayoutParams(dp(TOOLBAR_DP), dp(TOOLBAR_DP)));
     layout.addView(toolbar);
     rootView = new FrameLayout(this);
     rootView.addOnLayoutChangeListener((view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
@@ -202,14 +204,14 @@ public final class MainActivity extends Activity {
       android.graphics.Insets bars = metrics.getWindowInsets().getInsetsIgnoringVisibility(
           android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());
       environment = MobileLayoutEnvironment.forWindow(bounds.width(), bounds.height(),
-          bars.left, bars.top, bars.right, bars.bottom, dp(48), density);
+          bars.left, bars.top, bars.right, bars.bottom, dp(TOOLBAR_DP), density);
     } else {
       // Configuration dimensions follow the activity's window (including
       // multi-window resizing), but do not shrink when the IME opens.
       Configuration configuration = getResources().getConfiguration();
       environment = MobileLayoutEnvironment.forWindow(
           Math.round(configuration.screenWidthDp * density), Math.round(configuration.screenHeightDp * density),
-          0, 0, 0, 0, dp(48), density);
+          0, 0, 0, 0, dp(TOOLBAR_DP), density);
     }
     if (environment.equals(mobileLayoutEnvironment)) return;
     mobileLayoutEnvironment = environment;
@@ -239,15 +241,15 @@ public final class MainActivity extends Activity {
       item.setOrientation(LinearLayout.HORIZONTAL);
       item.setGravity(Gravity.CENTER_VERTICAL);
       item.setBackgroundColor(tab == activeTab ? Color.rgb(245, 241, 232) : Color.rgb(53, 73, 69));
-      LinearLayout.LayoutParams itemParams = new LinearLayout.LayoutParams(dp(150), dp(42));
+      LinearLayout.LayoutParams itemParams = new LinearLayout.LayoutParams(dp(140), dp(TOOLBAR_DP - 6));
       itemParams.setMargins(dp(4), dp(4), 0, dp(2));
       tabStrip.addView(item, itemParams);
       TextView label = new TextView(this);
       label.setText(tab.title);
-      label.setTextSize(14);
+      label.setTextSize(13);
       label.setSingleLine(true);
       label.setEllipsize(TextUtils.TruncateAt.END);
-      label.setPadding(dp(12), 0, dp(4), 0);
+      label.setPadding(dp(10), 0, dp(2), 0);
       label.setGravity(Gravity.CENTER_VERTICAL);
       label.setTextColor(tab == activeTab ? Color.rgb(25, 47, 41) : Color.WHITE);
       label.setTypeface(null, tab == activeTab ? Typeface.BOLD : Typeface.NORMAL);
@@ -256,12 +258,12 @@ public final class MainActivity extends Activity {
       item.addView(label, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
       TextView close = new TextView(this);
       close.setText("×");
-      close.setTextSize(20);
+      close.setTextSize(17);
       close.setTextColor(tab == activeTab ? Color.rgb(25, 47, 41) : Color.WHITE);
       close.setGravity(Gravity.CENTER);
       close.setContentDescription("关闭 " + tab.title);
       close.setOnClickListener(v -> closeTab(tab));
-      item.addView(close, new LinearLayout.LayoutParams(dp(42), ViewGroup.LayoutParams.MATCH_PARENT));
+      item.addView(close, new LinearLayout.LayoutParams(dp(34), ViewGroup.LayoutParams.MATCH_PARENT));
       if (tab == activeTab) selected = item;
     }
     if (revealActive && selected != null) {
