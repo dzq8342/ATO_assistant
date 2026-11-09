@@ -146,9 +146,9 @@ jobs:
           ./tools/release_android.ps1 @arguments
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        # 私人版：直接上传 APK 本身（不打成 zip），下载即可安装。
+        uses: actions/upload-artifact@v7
         with:
-          name: ATO-Assistant-Android-${{ steps.release.outputs.version }}
-          path: |
-            export/ATO-Assistant-${{ steps.release.outputs.version }}.apk
+          path: export/ATO-Assistant-${{ steps.release.outputs.version }}.apk
+          archive: false
           if-no-files-found: error
