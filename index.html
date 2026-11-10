@@ -2065,29 +2065,20 @@
 
       .card-track-dialog[data-group="doom"] .card-track-doom-icon {
         grid-area: icon;
-        display: block;
+        display: flex;
+        justify-content: flex-end;
       }
 
-      /* 末日图标和「阿尔戈号知识」图标同一种画法：用 SVG 做遮罩，颜色取 currentColor。
-         图标文件由 doomIconSource() 探测，找不到时整个图标隐藏。 */
+      /* 末日图标先找界面图标包里的 ato-apk-doom.svg，没有就退到剧情书混排素材里的
+         icon-doom.svg / .png（两者都随资料包分发），都没有就隐藏。 */
       .card-track-dialog[data-group="doom"] .card-track-doom-icon[hidden] {
         display: none;
       }
 
-      .card-track-dialog[data-group="doom"] .card-track-doom-icon {
-        justify-self: end;
-        width: 52px;
-        height: 58px;
-        color: var(--accent-strong);
-        background-color: currentColor;
-        -webkit-mask-image: var(--icon-src);
-        mask-image: var(--icon-src);
-        -webkit-mask-repeat: no-repeat;
-        mask-repeat: no-repeat;
-        -webkit-mask-position: center;
-        mask-position: center;
-        -webkit-mask-size: contain;
-        mask-size: contain;
+      .card-track-dialog[data-group="doom"] .card-track-doom-icon img {
+        width: 56px;
+        height: auto;
+        display: block;
       }
 
       .card-track-dialog[data-group="doom"] .card-track-counter input {
@@ -7164,37 +7155,6 @@
       if (typeof renderFlow === "function") renderFlow();
     }
 
-    // 私人版：末日图标。主控台的界面图标包里原本没有末日字形，按顺序探测几个可能随资料包
-    // 安装的位置，取第一个能加载的；探测完成后重绘弹窗。都没有就返回空串（图标隐藏）。
-    const doomIconCandidates = [
-      "./assets/icons/ato-apk-doom.svg?v=apk-ui-a72da92bdf63",
-      "./assets/icons/doom.svg?v=apk-ui-a72da92bdf63",
-      "./story/assets/mixed-media/images/c1/icon-doom.svg",
-      "./story/assets/mixed-media/images/c1/icon-doom.png",
-    ];
-    let doomIconResolved = null;
-    let doomIconProbing = false;
-    function doomIconSource() {
-      if (doomIconResolved !== null) return doomIconResolved;
-      if (!doomIconProbing) {
-        doomIconProbing = true;
-        (async () => {
-          for (const candidate of doomIconCandidates) {
-            const ok = await new Promise((resolve) => {
-              const probe = new Image();
-              probe.onload = () => resolve(probe.naturalWidth > 0 || /\.svg/.test(candidate));
-              probe.onerror = () => resolve(false);
-              probe.src = candidate;
-            });
-            if (ok) { doomIconResolved = candidate; break; }
-          }
-          if (doomIconResolved === null) doomIconResolved = "";
-          if (elements.cardTrackDialog?.open && elements.cardTrackDialog.dataset.group === "doom") renderCardTrackDialog();
-        })();
-      }
-      return "";
-    }
-
     function renderCardTrackDialog(groupId = elements.cardTrackDialog?.dataset.group) {
       const group = cardTrackGroups[groupId];
       if (!group) return;
@@ -7228,7 +7188,7 @@
               <div class="${def.key === "doom" ? "card-track-counter-row" : ""}">
               ${def.key === "doom" ? `
                 <div class="card-track-counter">
-                  <span class="card-track-doom-icon" aria-hidden="true"${doomIconSource() ? ` style="--icon-src:url(${escapeHtml(doomIconSource())})"` : " hidden"}></span>
+                  <span class="card-track-doom-icon" aria-hidden="true"><img src="./assets/icons/ato-apk-doom.svg" alt="" data-fallbacks="./story/assets/mixed-media/images/c1/icon-doom.svg|./story/assets/mixed-media/images/c1/icon-doom.png" onerror="const l=(this.dataset.fallbacks||'').split('|').filter(Boolean);if(l.length){this.dataset.fallbacks=l.slice(1).join('|');this.src=l[0];}else{this.onerror=null;this.parentNode.hidden=true;}"></span>
                   <span class="card-track-counter-label${doomState.limits.some(limit => track.doom >= limit) ? " card-token-limit-warning" : ""}" title="${escapeHtml(doomState.statusText)}">灾祸<br><small>${escapeHtml(doomState.limits.length ? `上限 ${doomState.limits.join(" / ")}` : "无固定上限")}</small></span>
                   <button type="button" data-card-counter="${escapeHtml(def.key)}" data-card-counter-field="doom" data-delta="-1" aria-label="灾祸减一">-</button>
                   <input type="number" min="0" step="1" value="${track.doom}" data-card-counter-input="${escapeHtml(def.key)}" data-card-counter-field="doom" aria-label="灾祸">
