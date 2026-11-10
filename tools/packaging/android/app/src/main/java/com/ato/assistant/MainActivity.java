@@ -352,14 +352,9 @@ public final class MainActivity extends Activity {
     webView = tab.view;
     currentStorySession = tab.story;
     tab.view.setVisibility(View.VISIBLE);
-    tab.view.evaluateJavascript(TAB_SHOWN_SCRIPT, null);
     updateTabs(true);
   }
 
-  // 私人版：App 内的标签页只是显示 / 隐藏 WebView，页面收不到浏览器的 focus 事件。
-  // 切到某个标签页时补发 focus：剧情书据此重新让第二屏显示剧情书，地图据此刷新「第二屏显示地图」。
-  private static final String TAB_SHOWN_SCRIPT =
-      "(function(){try{window.dispatchEvent(new Event('focus'));}catch(e){}})();";
   // 私人版：关闭标签页时 WebView 被直接销毁，页面收不到 pagehide，这里补发（剧情书据此把第二屏切回地图）。
   private static final String TAB_CLOSING_SCRIPT =
       "(function(){try{var e;try{e=new PageTransitionEvent('pagehide',{persisted:false});}catch(x){e=new Event('pagehide');}"

@@ -3732,10 +3732,10 @@
     await refreshSecondScreenStoryModeToggle();
   }
 
-  // 私人版：剧情书页面在前台时，第二屏自动显示剧情书；切到其他标签页时第二屏保持剧情书，
+  // 私人版：打开剧情书时第二屏自动显示剧情书；切到其他标签页时第二屏保持剧情书，
   // 只有关闭剧情书标签页（或在本标签页离开剧情书）时才切回原来的画面
   // （默认地图；进剧情书前正在显示 AIBP 决战版图的，就回到 AIBP）。
-  // 页面上的「第二屏显示文本」勾选框仍可手动切换，手动取消后直到下次回到前台前都不会再自动切。
+  // 「第二屏显示文本」勾选框仍可手动切换。
   let secondScreenAutoStory = false;
   let secondScreenModeBeforeStory = "map";
   let secondScreenAutoBusy = false;
