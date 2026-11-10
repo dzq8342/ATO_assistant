@@ -1519,6 +1519,28 @@
       max-width: none;
     }
 
+    /* 段号充当标题：段号靠左、勾选框靠右；有文字说明时说明独占上一行。 */
+    .survey-constant-boxes .survey-constant-entry.code-title,
+    .survey-constant-boxes .survey-constant-row-item.multi-slot.survey-constant-entry.code-title {
+      grid-template-columns: auto minmax(0, 1fr);
+      row-gap: 4px;
+    }
+
+    .survey-constant-entry.code-title .survey-constant-label {
+      grid-column: 1 / -1;
+    }
+
+    .survey-constant-entry.code-title .survey-constant-roll {
+      min-width: 0;
+      text-align: left;
+    }
+
+    .survey-constant-entry.code-title > input,
+    .survey-constant-entry.code-title .simple-constant-slots {
+      grid-column: auto;
+      justify-self: end;
+    }
+
     .survey-constant-entry .survey-constant-roll:empty {
       min-width: 0;
     }
@@ -3665,6 +3687,8 @@
       c1: {
         title: "主线故事",
         chapter: "main",
+        // 私人版：这里的段号本身充当标题，排在左侧。
+        codeAsTitle: true,
         boxes: [
           ["0341", "0341", "", { entry: "0341" }],
           ["0014", "0014", "主线记录", { count: 8, entry: "0014" }],
@@ -8349,7 +8373,13 @@
           rollText.dataset.englishCaption = "true";
           labelText.dataset.englishText = roll;
         }
-        row.append(labelText, rollText, slotIds.length === 1 ? slotWrap.firstChild : slotWrap);
+        if (data.codeAsTitle) {
+          row.classList.add("code-title");
+          if (label) row.append(labelText);
+          row.append(rollText, slotIds.length === 1 ? slotWrap.firstChild : slotWrap);
+        } else {
+          row.append(labelText, rollText, slotIds.length === 1 ? slotWrap.firstChild : slotWrap);
+        }
         boxes.appendChild(row);
       });
 
