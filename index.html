@@ -1481,6 +1481,17 @@
       grid-template-columns: auto minmax(0, 1fr);
     }
 
+    /* 私人版：勘察定数框行布局——左侧标题+关键词，右侧数字+勾选框。 */
+    .survey-constant-boxes label.survey-constant-entry {
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 8px;
+    }
+
+    .survey-constant-entry .survey-constant-roll {
+      min-width: 34px;
+      text-align: right;
+    }
+
     .simple-constant-slots {
       display: inline-flex;
       gap: 4px;
@@ -8121,7 +8132,9 @@
           tagBadge.textContent = tag;
           labelText.append(" ", tagBadge);
         }
-        row.append(input, rollText, labelText);
+        // 私人版：勘察定数框每行改为「标题 关键词 …… 数字 勾选框」，两端对齐。
+        row.className = "survey-constant-entry";
+        row.append(labelText, rollText, input);
         boxes.appendChild(row);
       });
 
