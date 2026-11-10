@@ -141,7 +141,9 @@ button.secondary.danger:hover { border-color: var(--danger); }
   body:not(.second-screen-map) .tile-lookup-row input { width: 100%; min-width: 0; }
   body:not(.second-screen-map) .toggle-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; }
   body:not(.second-screen-map) .toggle-row .check-label { min-height: 28px; padding: 0 6px; font-size: 12px; }
+  /* 「故事集 I」状态与图标框排在「搜索 / 揭示板块」框上面。 */
   body:not(.second-screen-map) .token-panel {
+    order: -1;
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "status" "tokens" "actions";
     gap: 8px;
