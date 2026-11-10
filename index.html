@@ -3666,6 +3666,7 @@
         title: "主线故事",
         chapter: "main",
         boxes: [
+          ["0341", "0341", "", { entry: "0341" }],
           ["0014", "0014", "主线记录", { count: 8, entry: "0014" }],
         ],
       },
@@ -7477,7 +7478,7 @@
       return {
         label: "主线",
         bgm: "story",
-        title: row ? `${row[1]} · ${row[2]}` : "",
+        title: row ? (row[2] ? `${row[1]} · ${row[2]}` : row[1]) : "",
         href: getStoryHref({
           chapter: data.chapter,
           entry: row?.[3]?.entry || row?.[0] || target,
