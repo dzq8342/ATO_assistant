@@ -2145,6 +2145,12 @@ window.ATO_TERMS = [
   // 冒险中枢显示为「分支冒险」；其他页面仍按全局条目显示。
   { "from": "R&R", "to": "休整冒险", "scope": "body[data-theme-dashboard]" },
   { "from": "冒险中枢", "to": "分支冒险", "scope": "body[data-theme-dashboard]" },
+  // 地图模块：故事集切换按钮、状态栏标题、图标分组提示里的 Cycle → 故事集。
+  { "from": "Cycle I", "to": "故事集 I", "scope": "#cycleTabs, .map-status, .token-menu-trigger" },
+  { "from": "Cycle II", "to": "故事集 II", "scope": "#cycleTabs, .map-status, .token-menu-trigger" },
+  { "from": "Cycle III", "to": "故事集 III", "scope": "#cycleTabs, .map-status, .token-menu-trigger" },
+  { "from": "Cycle IV", "to": "故事集 IV", "scope": "#cycleTabs, .map-status, .token-menu-trigger" },
+  { "from": "Cycle V", "to": "故事集 V", "scope": "#cycleTabs, .map-status, .token-menu-trigger" },
   // 主控台残留英文：顶部故事集选择、勘察步骤分支总表表头。C4/C5 故事集名暂不处理。
   { "from": "当前 Cycle", "to": "当前故事集", "scope": "body[data-theme-dashboard]" },
   { "from": "Cycle 1: Truth of the Labyrinth", "to": "故事集 1：迷宫的真理", "scope": "body[data-theme-dashboard]" },
