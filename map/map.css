@@ -172,3 +172,6 @@ button.secondary.danger:hover { border-color: var(--danger); }
     min-height: 0;
   }
 }
+
+/* 私人版：隐藏「标签」按钮（作者用的地图打标开发工具，安卓版无法保存）。所有布局都隐藏。 */
+#openTagEditorButton { display: none !important; }
