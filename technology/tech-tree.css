@@ -79,7 +79,7 @@ body[data-theme-module="technology"] .tree-wrap.tech-canvas { position: absolute
     border-bottom: 1px solid var(--line); background: transparent;
   }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tabs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
-  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tabs .tab { grid-column: 1 / -1; justify-self: start; min-height: 30px; padding: 0; font-size: 13px; text-align: left; }
+  body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tabs .tab { grid-column: 1 / -1; justify-self: start; min-height: 29px; padding: 0; font-size: 13px; text-align: left; }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools { flex-wrap: wrap; gap: 6px; }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools .search { flex: 1 1 100%; min-width: 0; }
   body[data-theme-module="technology"] .main:has(#mainView.tech-tree-view) .tools { font-size: 12px; }
