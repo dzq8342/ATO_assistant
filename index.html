@@ -3691,7 +3691,7 @@
         codeAsTitle: true,
         boxes: [
           ["0341", "0341", "", { entry: "0341" }],
-          ["0014", "0014", "主线记录", { count: 8, entry: "0014" }],
+          ["0014", "0014", "主线记录", { count: 8, entry: "0014", hostHub: "fated-conundrum" }],
         ],
       },
       c2: {
@@ -8194,6 +8194,15 @@
         boxes.appendChild(row);
       });
 
+      if (groupId === "hubs") {
+        const mainData = currentMainStoryConstants();
+        const hosted = (mainData?.boxes || []).filter((row) => row[3]?.hostHub === item.id);
+        if (hosted.length) {
+          const mainValues = ensureTodayMainStoryConstants();
+          hosted.forEach((row) => boxes.appendChild(createSimpleConstantRow(mainData, row, mainValues, { set: setMainStoryConstant })));
+        }
+      }
+
       // 私人版：休整冒险卡的标题与行内名称重复，只保留行。
       if (groupId === "rr") card.append(boxes);
       else card.append(title, boxes);
@@ -8313,6 +8322,46 @@
       return details;
     }
 
+    function createSimpleConstantRow(data, item, values, options) {
+      const [boxId, roll, label] = item;
+      const slotIds = simpleConstantSlotIds(item);
+      const row = document.createElement(slotIds.length === 1 ? "label" : "div");
+      row.className = slotIds.length === 1 ? "" : "survey-constant-row-item multi-slot";
+      const slotWrap = document.createElement("span");
+      slotWrap.className = "simple-constant-slots";
+      slotIds.forEach((slotId, index) => {
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.checked = Boolean(values[slotId] || (index === 0 && values[boxId]));
+        input.setAttribute("aria-label", `${roll} ${label} ${index + 1}`);
+        input.addEventListener("change", () => {
+          if (values[boxId]) delete values[boxId];
+          options.set(slotId, input.checked);
+        });
+        slotWrap.appendChild(input);
+      });
+      // 私人版：每行改为「标题 …… 数字 勾选框」，两端对齐；多格的勾选框在右侧换行排列。
+      row.classList.add("survey-constant-entry");
+      const rollText = document.createElement("span");
+      rollText.className = "survey-constant-roll";
+      rollText.textContent = roll;
+      const labelText = document.createElement("span");
+      labelText.className = "survey-constant-label";
+      labelText.textContent = label;
+      if (/[A-Za-z]/.test(roll) && /[\u3400-\u9fff]/.test(label)) {
+        rollText.dataset.englishCaption = "true";
+        labelText.dataset.englishText = roll;
+      }
+      if (data.codeAsTitle || item[3]?.hostHub) {
+        row.classList.add("code-title");
+        if (label) row.append(labelText);
+        row.append(rollText, slotIds.length === 1 ? slotWrap.firstChild : slotWrap);
+      } else {
+        row.append(labelText, rollText, slotIds.length === 1 ? slotWrap.firstChild : slotWrap);
+      }
+      return row;
+    }
+
     function createSimpleConstantTools(data, options) {
       if (!data) return null;
 
@@ -8343,44 +8392,9 @@
       if (data.subtitle || options.subtitle) title.dataset.englishText = data.subtitle || options.subtitle;
       const boxes = document.createElement("div");
       boxes.className = "survey-constant-boxes";
-      data.boxes.forEach((item) => {
-        const [boxId, roll, label] = item;
-        const slotIds = simpleConstantSlotIds(item);
-        const row = document.createElement(slotIds.length === 1 ? "label" : "div");
-        row.className = slotIds.length === 1 ? "" : "survey-constant-row-item multi-slot";
-        const slotWrap = document.createElement("span");
-        slotWrap.className = "simple-constant-slots";
-        slotIds.forEach((slotId, index) => {
-          const input = document.createElement("input");
-          input.type = "checkbox";
-          input.checked = Boolean(values[slotId] || (index === 0 && values[boxId]));
-          input.setAttribute("aria-label", `${roll} ${label} ${index + 1}`);
-          input.addEventListener("change", () => {
-            if (values[boxId]) delete values[boxId];
-            options.set(slotId, input.checked);
-          });
-          slotWrap.appendChild(input);
-        });
-        // 私人版：每行改为「标题 …… 数字 勾选框」，两端对齐；多格的勾选框在右侧换行排列。
-        row.classList.add("survey-constant-entry");
-        const rollText = document.createElement("span");
-        rollText.className = "survey-constant-roll";
-        rollText.textContent = roll;
-        const labelText = document.createElement("span");
-        labelText.className = "survey-constant-label";
-        labelText.textContent = label;
-        if (/[A-Za-z]/.test(roll) && /[\u3400-\u9fff]/.test(label)) {
-          rollText.dataset.englishCaption = "true";
-          labelText.dataset.englishText = roll;
-        }
-        if (data.codeAsTitle) {
-          row.classList.add("code-title");
-          if (label) row.append(labelText);
-          row.append(rollText, slotIds.length === 1 ? slotWrap.firstChild : slotWrap);
-        } else {
-          row.append(labelText, rollText, slotIds.length === 1 ? slotWrap.firstChild : slotWrap);
-        }
-        boxes.appendChild(row);
+      // 私人版：带 hostHub 的行（如 C1 的 0014 主线记录）移到勘察步骤对应分支冒险卡里显示。
+      data.boxes.filter((item) => !item[3]?.hostHub).forEach((item) => {
+        boxes.appendChild(createSimpleConstantRow(data, item, values, options));
       });
 
       card.append(title, boxes);
