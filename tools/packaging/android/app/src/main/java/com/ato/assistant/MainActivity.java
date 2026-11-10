@@ -367,6 +367,10 @@ public final class MainActivity extends Activity {
   private static final String TAB_SHOWN_SCRIPT =
       "(function(){try{if(Object.prototype.hasOwnProperty.call(document,'hidden')){delete document.hidden;delete document.visibilityState;"
       + "document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));}}catch(e){}})();";
+  // 关闭标签页：WebView 被直接销毁，页面收不到 pagehide，这里补发（剧情书据此把第二屏切回地图）。
+  private static final String TAB_CLOSING_SCRIPT =
+      "(function(){try{var e;try{e=new PageTransitionEvent('pagehide',{persisted:false});}catch(x){e=new Event('pagehide');}"
+      + "window.dispatchEvent(e);}catch(e){}})();";
 
   private void closeTab(PageTab tab) {
     if (tab == null || tab.closed) return;
@@ -384,6 +388,7 @@ public final class MainActivity extends Activity {
     final WebView closingView = tab.view;
     closingView.setVisibility(View.GONE);
     closingView.evaluateJavascript(TAB_HIDDEN_SCRIPT, null);
+    closingView.evaluateJavascript(TAB_CLOSING_SCRIPT, null);
     closingView.postDelayed(() -> {
       if (closingView.getParent() instanceof ViewGroup) ((ViewGroup) closingView.getParent()).removeView(closingView);
       closingView.removeJavascriptInterface("ATOAndroid");
