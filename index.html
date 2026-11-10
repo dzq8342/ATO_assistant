@@ -1492,6 +1492,37 @@
       text-align: right;
     }
 
+    .survey-constant-card {
+      align-content: start;
+    }
+
+    .survey-constant-boxes .survey-constant-entry,
+    [data-term-scope="step-constants"] .survey-constant-boxes > label.survey-constant-entry,
+    [data-term-scope="step-constants"] .survey-constant-row-item.multi-slot.survey-constant-entry {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    /* 多格行：第一行「标题 …… 数字」，勾选框在下一行靠右排列。 */
+    .survey-constant-boxes .survey-constant-row-item.multi-slot.survey-constant-entry {
+      grid-template-columns: minmax(0, 1fr) auto;
+      row-gap: 4px;
+    }
+
+    .survey-constant-entry .simple-constant-slots {
+      grid-column: 1 / -1;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      min-width: 0;
+      max-width: none;
+    }
+
+    .survey-constant-entry .survey-constant-roll:empty {
+      min-width: 0;
+    }
+
     .simple-constant-slots {
       display: inline-flex;
       gap: 4px;
@@ -8138,7 +8169,9 @@
         boxes.appendChild(row);
       });
 
-      card.append(title, boxes);
+      // 私人版：休整冒险卡的标题与行内名称重复，只保留行。
+      if (groupId === "rr") card.append(boxes);
+      else card.append(title, boxes);
       return card;
     }
 
@@ -8304,23 +8337,19 @@
           });
           slotWrap.appendChild(input);
         });
-        if (slotIds.length === 1) {
-          const rollText = document.createElement("span");
-          rollText.className = "survey-constant-roll";
-          rollText.textContent = roll;
-          const labelText = document.createElement("span");
-          labelText.textContent = label;
-          if (/[A-Za-z]/.test(roll) && /[\u3400-\u9fff]/.test(label)) {
-            rollText.dataset.englishCaption = "true";
-            labelText.dataset.englishText = roll;
-          }
-          row.append(slotWrap.firstChild, rollText, labelText);
-        } else {
-          const text = document.createElement("span");
-          const bilingual = /[A-Za-z]/.test(roll) && /[\u3400-\u9fff]/.test(label);
-          text.innerHTML = `<span class="survey-constant-roll" ${bilingual ? 'data-english-caption' : ''}>${escapeHtml(roll)}</span> <span ${bilingual ? `data-english-text="${escapeHtml(roll)}"` : ''}>${escapeHtml(label)}</span>`;
-          row.append(slotWrap, text);
+        // 私人版：每行改为「标题 …… 数字 勾选框」，两端对齐；多格的勾选框在右侧换行排列。
+        row.classList.add("survey-constant-entry");
+        const rollText = document.createElement("span");
+        rollText.className = "survey-constant-roll";
+        rollText.textContent = roll;
+        const labelText = document.createElement("span");
+        labelText.className = "survey-constant-label";
+        labelText.textContent = label;
+        if (/[A-Za-z]/.test(roll) && /[\u3400-\u9fff]/.test(label)) {
+          rollText.dataset.englishCaption = "true";
+          labelText.dataset.englishText = roll;
         }
+        row.append(labelText, rollText, slotIds.length === 1 ? slotWrap.firstChild : slotWrap);
         boxes.appendChild(row);
       });
 
