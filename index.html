@@ -2013,46 +2013,6 @@
       line-height: 1.4;
     }
 
-    /* 私人版：平板横屏时，灾祸卡面放大到按高度铺满，灾祸加减等控件放到卡面右侧。 */
-    @media (orientation: landscape) and (min-width: 900px) and (max-height: 900px) {
-      .card-track-dialog[data-group="doom"] .card-track-item {
-        width: 100%;
-        grid-template-columns: auto minmax(220px, 1fr);
-        column-gap: 16px;
-        align-items: start;
-      }
-
-      .card-track-dialog[data-group="doom"] .card-track-title {
-        grid-column: 1 / -1;
-      }
-
-      .card-track-dialog[data-group="doom"] .card-track-face,
-      .card-track-dialog[data-group="doom"] .card-track-empty {
-        /* 高度预算：弹窗外边距 28 + 标题栏 61 + 正文内边距 28 + 卡片内边距与边框 22
-           + 卡片标题 22 + 间距 10 ≈ 171，再留余量按 190 算；卡面宽高比 1.4。 */
-        width: min(calc(100vw - 340px), calc((100vh - 190px) * 1.4));
-        width: min(calc(100vw - 340px), calc((100dvh - 190px) * 1.4));
-        justify-self: start;
-      }
-
-      .card-track-dialog[data-group="doom"] .card-track-controls {
-        align-content: start;
-        gap: 12px;
-      }
-
-      .card-track-dialog[data-group="doom"] .card-track-counter-row {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .card-track-dialog[data-group="doom"] .card-track-counter {
-        grid-template-columns: auto 40px minmax(48px, 1fr) 40px;
-      }
-
-      .card-track-dialog[data-group="doom"] .card-track-counter button {
-        min-height: 40px;
-      }
-    }
-
     .step-actions {
       display: flex;
       flex-wrap: wrap;
