@@ -1972,6 +1972,10 @@
       align-items: center;
     }
 
+    .card-track-doom-icon {
+      display: none;
+    }
+
     .card-track-counter-label {
       color: var(--muted);
       font-size: 12px;
@@ -2044,12 +2048,56 @@
         grid-template-columns: minmax(0, 1fr);
       }
 
+      /* 灾祸计数：左侧末日图标，右侧上方是放大的数字，下方是减/加按钮。 */
       .card-track-dialog[data-group="doom"] .card-track-counter {
-        grid-template-columns: auto 40px minmax(48px, 1fr) 40px;
+        grid-template-columns: 84px minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas:
+          "label label label"
+          "icon  value value"
+          "icon  minus plus";
+        gap: 8px 10px;
+        align-items: stretch;
+      }
+
+      .card-track-dialog[data-group="doom"] .card-track-counter-label {
+        grid-area: label;
+      }
+
+      .card-track-dialog[data-group="doom"] .card-track-doom-icon {
+        grid-area: icon;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .card-track-dialog[data-group="doom"] .card-track-doom-icon img {
+        width: 76px;
+        height: auto;
+        display: block;
+      }
+
+      .card-track-dialog[data-group="doom"] .card-track-counter input {
+        grid-area: value;
+        height: 72px;
+        font-size: 48px;
+        font-weight: 900;
+        line-height: 1;
+        text-align: center;
+        padding: 0 8px;
+      }
+
+      .card-track-dialog[data-group="doom"] .card-track-counter button[data-delta="-1"] {
+        grid-area: minus;
+      }
+
+      .card-track-dialog[data-group="doom"] .card-track-counter button[data-delta="1"] {
+        grid-area: plus;
       }
 
       .card-track-dialog[data-group="doom"] .card-track-counter button {
-        min-height: 40px;
+        min-height: 44px;
+        font-size: 22px;
+        font-weight: 900;
       }
     }
 
@@ -7120,6 +7168,7 @@
               <div class="${def.key === "doom" ? "card-track-counter-row" : ""}">
               ${def.key === "doom" ? `
                 <div class="card-track-counter">
+                  <span class="card-track-doom-icon" aria-hidden="true"><img src="./assets/icons/ato-apk-doom.svg" alt=""></span>
                   <span class="card-track-counter-label${doomState.limits.some(limit => track.doom >= limit) ? " card-token-limit-warning" : ""}" title="${escapeHtml(doomState.statusText)}">灾祸<br><small>${escapeHtml(doomState.limits.length ? `上限 ${doomState.limits.join(" / ")}` : "无固定上限")}</small></span>
                   <button type="button" data-card-counter="${escapeHtml(def.key)}" data-card-counter-field="doom" data-delta="-1" aria-label="灾祸减一">-</button>
                   <input type="number" min="0" step="1" value="${track.doom}" data-card-counter-input="${escapeHtml(def.key)}" data-card-counter-field="doom" aria-label="灾祸">
