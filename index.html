@@ -3683,11 +3683,11 @@
       },
     };
 
+    // 私人版：主线剧情的段号本身充当标题，排在左侧；连续相同的说明只显示一次。
     const mainStoryConstants = {
       c1: {
         title: "主线故事",
         chapter: "main",
-        // 私人版：这里的段号本身充当标题，排在左侧。
         codeAsTitle: true,
         boxes: [
           ["0341", "0341", "", { entry: "0341" }],
@@ -3697,6 +3697,7 @@
       c2: {
         title: "主线故事",
         chapter: "main",
+        codeAsTitle: true,
         boxes: [
           ["0248", "0248", "Hull Depleted"],
           ["0249", "0249", "Crew Depleted"],
@@ -3705,6 +3706,7 @@
       c3: {
         title: "主线故事",
         chapter: "main",
+        codeAsTitle: true,
         boxes: [
           ["0271", "0271", "船体失败", { entry: "0271" }],
           ["0272", "0272", "船员失败", { entry: "0272" }],
@@ -3714,6 +3716,7 @@
       c4: {
         title: "主线故事",
         chapter: "main",
+        codeAsTitle: true,
         boxes: [
           ["0080", "0080", "主线记录"],
         ],
@@ -3721,6 +3724,7 @@
       c5: {
         title: "主线故事",
         chapter: "main",
+        codeAsTitle: true,
         boxes: [
           ["0611", "0611", "主线记录"],
           ["4104", "4104", "主线记录"],
@@ -8354,7 +8358,7 @@
       }
       if (data.codeAsTitle || item[3]?.hostHub) {
         row.classList.add("code-title");
-        if (label) row.append(labelText);
+        if (label && label !== options.previousLabel) row.append(labelText);
         row.append(rollText, slotIds.length === 1 ? slotWrap.firstChild : slotWrap);
       } else {
         row.append(labelText, rollText, slotIds.length === 1 ? slotWrap.firstChild : slotWrap);
@@ -8393,8 +8397,10 @@
       const boxes = document.createElement("div");
       boxes.className = "survey-constant-boxes";
       // 私人版：带 hostHub 的行（如 C1 的 0014 主线记录）移到勘察步骤对应分支冒险卡里显示。
+      let previousLabel = null;
       data.boxes.filter((item) => !item[3]?.hostHub).forEach((item) => {
-        boxes.appendChild(createSimpleConstantRow(data, item, values, options));
+        boxes.appendChild(createSimpleConstantRow(data, item, values, { ...options, previousLabel }));
+        previousLabel = item[2];
       });
 
       card.append(title, boxes);
