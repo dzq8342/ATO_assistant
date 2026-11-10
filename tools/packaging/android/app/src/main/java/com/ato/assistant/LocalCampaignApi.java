@@ -342,6 +342,8 @@ final class LocalCampaignApi {
     mapDisplay.put("onlyExplored", mapState.optBoolean("onlyExplored", false));
     mapDisplay.put("hideUnknown", mapState.optBoolean("hideUnknown", true));
     mapDisplay.put("showAdjacency", mapState.optBoolean("showAdjacency", false));
+    // 私人版：与服务器版 api/campaign-state.php 一致，把「显示网格」也同步到第二屏。
+    mapDisplay.put("showGrid", mapState.optBoolean("showGrid", false));
     mapDisplay.put("query", mapState.optString("query", ""));
     screen.put("mapDisplay", mapDisplay);
     screen.put("aibp", aibpState);
