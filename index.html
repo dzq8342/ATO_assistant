@@ -7180,14 +7180,14 @@
       }).join("");
     }
 
-    // 私人版：卡面原图查看器。双指缩放（以两指中点为中心）、单指拖动、双击在 1 倍与
-    // 2.5 倍间切换、鼠标滚轮缩放；未缩放时点空白处关闭。
+    // 私人版：卡面原图查看器。双指缩放（0.3–6 倍，以两指中点为中心）、单指拖动、双击
+    // 在适配大小与 2.5 倍间切换（已缩放时双击还原）、鼠标滚轮缩放；未放大时点空白处关闭。
     const cardImageViewer = (() => {
       const dialog = document.querySelector("#cardImageViewer");
       if (!dialog) return null;
       const stage = dialog.querySelector(".card-image-viewer-stage");
       const img = stage.querySelector("img");
-      const MIN = 1, MAX = 6;
+      const MIN = 0.3, MAX = 6; // 可缩到原始适配大小的 30%
       let scale = 1, x = 0, y = 0;
       const pointers = new Map();
       let pinch = null, pan = null, moved = false, lastTap = 0;
@@ -7275,7 +7275,7 @@
         const now = Date.now();
         if (now - lastTap < 300) {
           lastTap = 0;
-          if (scale > 1.05) { reset(); } else { zoomAt(2.5, p.x, p.y); }
+          if (Math.abs(scale - 1) > 0.05) { reset(); } else { zoomAt(2.5, p.x, p.y); }
           return;
         }
         lastTap = now;
