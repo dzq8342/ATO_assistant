@@ -2165,6 +2165,8 @@ window.ATO_TERMS = [
   // 勘察步骤的定数框（data-term-scope=survey-record）装的是分支总表 / 分支卡 / R&R 卡，
   // 标题显示为「分支冒险对照表及定数框」；故事步骤的三个定数框不在这个作用域里，保持原样。
   { "from": "定数框", "to": "分支冒险对照表及定数框", "scope": "[data-term-scope~=\"survey-record\"]" },
+  // 私人版：勘察定数框里分支卡那一组的小标题。
+  { "from": "冒险中枢定数框", "to": "分支冒险定数框", "scope": "[data-term-scope~=\"survey-record\"]" },
   // 官方 App 1.1.22 中英表：lbl_C3DP「航标梦境」= Dreams of Pharos。
   {
     "from": "法洛斯之梦",
