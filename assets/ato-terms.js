@@ -2167,6 +2167,7 @@ window.ATO_TERMS = [
   { "from": "定数框", "to": "分支冒险对照表及定数框", "scope": "[data-term-scope~=\"survey-record\"]" },
   // 私人版：勘察定数框里分支卡那一组的小标题。
   { "from": "冒险中枢定数框", "to": "分支冒险定数框", "scope": "[data-term-scope~=\"survey-record\"]" },
+  { "from": "R&R 冒险定数框", "to": "休整冒险定数框", "scope": "[data-term-scope~=\"survey-record\"]" },
   // 官方 App 1.1.22 中英表：lbl_C3DP「航标梦境」= Dreams of Pharos。
   {
     "from": "法洛斯之梦",
