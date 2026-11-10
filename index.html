@@ -8306,8 +8306,7 @@
 
       const group = document.createElement("section");
       group.className = "survey-constant-group";
-      group.innerHTML = `<div class="survey-constant-heading">${escapeHtml(data.title)}</div>`;
-      if (data.subtitle) group.firstElementChild.dataset.englishText = data.subtitle;
+      // 私人版：不再显示与卡片标题重复的分组标题。
       const grid = document.createElement("div");
       grid.className = "survey-constant-grid";
       const card = document.createElement("article");
