@@ -2069,12 +2069,6 @@
         justify-content: flex-end;
       }
 
-      /* 末日图标先找界面图标包里的 ato-apk-doom.svg，没有就退到剧情书混排素材里的
-         icon-doom.svg / .png（两者都随资料包分发），都没有就隐藏。 */
-      .card-track-dialog[data-group="doom"] .card-track-doom-icon[hidden] {
-        display: none;
-      }
-
       .card-track-dialog[data-group="doom"] .card-track-doom-icon img {
         width: 56px;
         height: auto;
@@ -7188,7 +7182,7 @@
               <div class="${def.key === "doom" ? "card-track-counter-row" : ""}">
               ${def.key === "doom" ? `
                 <div class="card-track-counter">
-                  <span class="card-track-doom-icon" aria-hidden="true"><img src="./assets/icons/ato-apk-doom.svg" alt="" data-fallbacks="./story/assets/mixed-media/images/c1/icon-doom.svg|./story/assets/mixed-media/images/c1/icon-doom.png" onerror="const l=(this.dataset.fallbacks||'').split('|').filter(Boolean);if(l.length){this.dataset.fallbacks=l.slice(1).join('|');this.src=l[0];}else{this.onerror=null;this.parentNode.hidden=true;}"></span>
+                  <span class="card-track-doom-icon" aria-hidden="true"><img src="./assets/icons/ato-apk-doom.svg" alt=""></span>
                   <span class="card-track-counter-label${doomState.limits.some(limit => track.doom >= limit) ? " card-token-limit-warning" : ""}" title="${escapeHtml(doomState.statusText)}">灾祸<br><small>${escapeHtml(doomState.limits.length ? `上限 ${doomState.limits.join(" / ")}` : "无固定上限")}</small></span>
                   <button type="button" data-card-counter="${escapeHtml(def.key)}" data-card-counter-field="doom" data-delta="-1" aria-label="灾祸减一">-</button>
                   <input type="number" min="0" step="1" value="${track.doom}" data-card-counter-input="${escapeHtml(def.key)}" data-card-counter-field="doom" aria-label="灾祸">
