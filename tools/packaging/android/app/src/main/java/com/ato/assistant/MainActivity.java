@@ -347,7 +347,6 @@ public final class MainActivity extends Activity {
         notifyStoryTtsResult(id, false, "切换页面，朗读已停止");
       }
       activeTab.view.setVisibility(View.GONE);
-      activeTab.view.evaluateJavascript(TAB_HIDDEN_SCRIPT, null);
     }
     activeTab = tab;
     webView = tab.view;
@@ -357,17 +356,11 @@ public final class MainActivity extends Activity {
     updateTabs(true);
   }
 
-  // 私人版：App 内的标签页只是把 WebView 设为 GONE，页面收不到 visibilitychange，
-  // 剧情书无法得知自己被切走（第二屏不会切回地图），地图也不会刷新「第二屏显示地图」。
-  // 切换标签页时补发与浏览器一致的可见性事件；关闭前同样先通知页面已隐藏。
-  private static final String TAB_HIDDEN_SCRIPT =
-      "(function(){try{Object.defineProperty(document,'hidden',{configurable:true,get:function(){return true;}});"
-      + "Object.defineProperty(document,'visibilityState',{configurable:true,get:function(){return 'hidden';}});"
-      + "document.dispatchEvent(new Event('visibilitychange'));}catch(e){}})();";
+  // 私人版：App 内的标签页只是显示 / 隐藏 WebView，页面收不到浏览器的 focus 事件。
+  // 切到某个标签页时补发 focus：剧情书据此重新让第二屏显示剧情书，地图据此刷新「第二屏显示地图」。
   private static final String TAB_SHOWN_SCRIPT =
-      "(function(){try{if(Object.prototype.hasOwnProperty.call(document,'hidden')){delete document.hidden;delete document.visibilityState;"
-      + "document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));}}catch(e){}})();";
-  // 关闭标签页：WebView 被直接销毁，页面收不到 pagehide，这里补发（剧情书据此把第二屏切回地图）。
+      "(function(){try{window.dispatchEvent(new Event('focus'));}catch(e){}})();";
+  // 私人版：关闭标签页时 WebView 被直接销毁，页面收不到 pagehide，这里补发（剧情书据此把第二屏切回地图）。
   private static final String TAB_CLOSING_SCRIPT =
       "(function(){try{var e;try{e=new PageTransitionEvent('pagehide',{persisted:false});}catch(x){e=new Event('pagehide');}"
       + "window.dispatchEvent(e);}catch(e){}})();";
@@ -383,11 +376,10 @@ public final class MainActivity extends Activity {
     tabs.remove(tab);
     tab.closed = true;
     tab.requests.incrementAndGet();
-    // 私人版：先让页面收到「已隐藏」并把请求发出去（剧情书据此把第二屏切回地图），
+    // 私人版：先补发 pagehide 让页面把请求发出去（剧情书据此把第二屏切回地图），
     // 稍后再销毁 WebView，避免请求随页面一起被掐断。
     final WebView closingView = tab.view;
     closingView.setVisibility(View.GONE);
-    closingView.evaluateJavascript(TAB_HIDDEN_SCRIPT, null);
     closingView.evaluateJavascript(TAB_CLOSING_SCRIPT, null);
     closingView.postDelayed(() -> {
       if (closingView.getParent() instanceof ViewGroup) ((ViewGroup) closingView.getParent()).removeView(closingView);
