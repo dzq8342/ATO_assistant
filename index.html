@@ -2048,15 +2048,15 @@
         grid-template-columns: minmax(0, 1fr);
       }
 
-      /* 灾祸计数：上方是末日图标 + 放大的数字（无边框），下方是减/加按钮。 */
+      /* 灾祸计数：左侧末日图标，右侧上方是放大的数字，下方是减/加按钮。 */
       .card-track-dialog[data-group="doom"] .card-track-counter {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-columns: 84px minmax(0, 1fr) minmax(0, 1fr);
         grid-template-areas:
-          "label label"
-          "icon  value"
-          "minus plus";
+          "label label label"
+          "icon  value value"
+          "icon  minus plus";
         gap: 8px 10px;
-        align-items: center;
+        align-items: stretch;
       }
 
       .card-track-dialog[data-group="doom"] .card-track-counter-label {
@@ -2066,38 +2066,24 @@
       .card-track-dialog[data-group="doom"] .card-track-doom-icon {
         grid-area: icon;
         display: flex;
-        justify-content: flex-end;
+        align-items: center;
+        justify-content: center;
       }
 
       .card-track-dialog[data-group="doom"] .card-track-doom-icon img {
-        width: 56px;
+        width: 76px;
         height: auto;
         display: block;
       }
 
       .card-track-dialog[data-group="doom"] .card-track-counter input {
         grid-area: value;
-        justify-self: start;
-        width: 3ch;
-        min-width: 0;
         height: 72px;
-        padding: 0;
-        border: 0;
-        outline: none;
-        background: transparent;
-        box-shadow: none;
-        font-size: 56px;
+        font-size: 48px;
         font-weight: 900;
         line-height: 1;
-        text-align: left;
-        -moz-appearance: textfield;
-        appearance: textfield;
-      }
-
-      .card-track-dialog[data-group="doom"] .card-track-counter input::-webkit-inner-spin-button,
-      .card-track-dialog[data-group="doom"] .card-track-counter input::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
+        text-align: center;
+        padding: 0 8px;
       }
 
       .card-track-dialog[data-group="doom"] .card-track-counter button[data-delta="-1"] {
