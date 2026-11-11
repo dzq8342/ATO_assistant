@@ -2578,6 +2578,22 @@
         width: 100%;
       }
     }
+    /* 私人版：宽屏两栏时，左栏「今日流程」和右栏各自滚动。
+       先滚整页，把标题和导航收上去；两栏顶到屏幕上沿后，再各滚各的。
+       栏能不能滚由脚本 syncDashboardColumnScroll() 切换 .columns-scrollable 决定；
+       在那之前先让整页滚，免得标题还占着屏幕时栏底部被挡在屏幕外。 */
+    @media (min-width: 1041px) {
+      html:not(.ato-apk-portrait) #appShell .grid > :is(.panel, .stack) {
+        max-height: 100vh;
+        max-height: 100dvh;
+        overflow: hidden;
+        scrollbar-width: thin;
+      }
+
+      html:not(.ato-apk-portrait) #appShell .grid.columns-scrollable > :is(.panel, .stack) {
+        overflow-y: auto;
+      }
+    }
   </style>
   <link rel="stylesheet" href="./api/dashboard.css?v=20261110-round-end-action">
   <link rel="stylesheet" href="./assets/theme.css?v=20261007-misc-settings11">
@@ -8752,7 +8768,19 @@
 
       window.requestAnimationFrame(() => {
         window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+        // 私人版：宽屏两栏各自滚动时，左栏「今日流程」自己也要回到顶端。
+        document.querySelector("#appShell .grid > .panel")?.scrollTo({ top: 0, behavior: "smooth" });
       });
+    }
+
+    // 私人版：宽屏两栏各自滚动（样式见 .columns-scrollable）。两栏顶到屏幕上沿时才允许栏内滚动，
+    // 否则让手指滑动先带着整页走，把标题和导航收上去。栏滚回顶端后继续往下拉，会接着把整页拉回来。
+    function syncDashboardColumnScroll() {
+      const grid = document.querySelector("#appShell .grid");
+      if (!grid) return;
+      const rect = grid.getBoundingClientRect();
+      // 登录前主控台是隐藏的，位置读数全是 0，不能当成「已经顶到上沿」。
+      grid.classList.toggle("columns-scrollable", rect.height > 0 && rect.top <= 1);
     }
 
     function createMapStepStatus(stepId) {
@@ -14526,6 +14554,11 @@
     elements.resetTodayButton.addEventListener("click", resetToday);
     elements.nextDayButton.addEventListener("click", nextDay);
     elements.previousDayButton.addEventListener("click", previousDay);
+    window.addEventListener("scroll", syncDashboardColumnScroll, { passive: true });
+    window.addEventListener("resize", syncDashboardColumnScroll);
+    // 主控台从隐藏变成显示（登录后）、或内容变高变矮时，也要重新判断一次。
+    if (window.ResizeObserver) new ResizeObserver(syncDashboardColumnScroll).observe(document.querySelector("#appShell .grid"));
+    syncDashboardColumnScroll();
     elements.acclimationReminderButton.addEventListener("click", () => {
       if (elements.acclimationReminderButton.disabled) return;
       const rule = getAcclimationRule(state.day, currentCycleConfig().id);
