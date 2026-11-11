@@ -2536,10 +2536,16 @@ if (elements.tileGridViewport) {
     const ratio = next / previous;
     const left = viewport.scrollLeft;
     const top = viewport.scrollTop;
+    // 地图在滚动内容里的起点：第二屏给地图加了 50vh/50vw 的外边距，主地图页为 0。
+    // 缩放只改变地图本身，外边距不随之变化，所以先换算到地图坐标再缩放。
+    const viewportRect = viewport.getBoundingClientRect();
+    const gridRect = elements.tileGrid.getBoundingClientRect();
+    const offsetX = gridRect.left - viewportRect.left + left;
+    const offsetY = gridRect.top - viewportRect.top + top;
     liveZoom = next;
     elements.tileGrid.style.setProperty("--map-zoom", `${next}%`);
-    viewport.scrollLeft = (left + fx) * ratio - fx;
-    viewport.scrollTop = (top + fy) * ratio - fy;
+    viewport.scrollLeft = (left + fx - offsetX) * ratio + offsetX - fx;
+    viewport.scrollTop = (top + fy - offsetY) * ratio + offsetY - fy;
   }
 
   function commitZoom() {
