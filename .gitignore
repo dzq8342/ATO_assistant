@@ -71,6 +71,8 @@
 !/assets/exploration-card-resources.js
 !/assets/exploration-card-tags.js
 !/assets/page-focus-router.js
+# 私人版：主控台卡图与剧情书官方扫描图共用的原图查看器，随源码发布
+!/assets/image-viewer.js
 !/assets/campaign-session.js
 !/assets/campaign-notes.js
 !/assets/record-attachments.js

@@ -3467,7 +3467,10 @@
     }
     // 加载期间用户可能已经跳到别的条目；不要拿旧图盖住新页面。
     if (!button.isConnected) return;
-    openPageViewerImages([{ src, alt }], 0);
+    // 私人版：官方扫描图改用与主控台卡图相同的查看器（assets/image-viewer.js）；没加载到时
+    // 退回原来的翻页查看器。
+    if (window.atoImageViewer) window.atoImageViewer.open(src, alt);
+    else openPageViewerImages([{ src, alt }], 0);
     button.disabled = false;
     button.classList.remove("is-loading");
     if (hint) hint.textContent = previous;
