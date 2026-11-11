@@ -70,6 +70,7 @@ $allowedPaths = @(
   'assets/jsave-import.js',
   'assets/jsave-tables.js',
   'assets/page-focus-router.js',
+  'assets/image-viewer.js',
   'assets/story-doom-card-data.js',
   'assets/term-language.js',
   'assets/theme.css',
