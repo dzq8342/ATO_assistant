@@ -2870,11 +2870,7 @@
                   <input id="secondScreenBattleBoardToggle" type="checkbox" checked>
                   显示决战版图
                 </label>
-                <label id="secondScreenScaleRow" class="second-screen-scale" hidden>
-                  地图显示大小
-                  <input id="secondScreenScale" type="range" min="60" max="200" step="10" value="100">
-                  <output id="secondScreenScaleValue">100%</output>
-                </label>
+                <!-- 私人版：去掉「地图显示大小」滑块，改在第二屏上双指缩放。 -->
                 <div id="secondScreenBattleScaleRow" class="second-screen-scale with-rotation" hidden>
                   <span>决战版图显示大小</span>
                   <input id="secondScreenBattleScale" type="range" min="60" max="200" step="10" value="100" aria-label="决战版图显示大小">
@@ -4888,9 +4884,11 @@
       }
       elements.secondScreenAddress.hidden = !enabled;
       const displayScale = Math.max(60, Math.min(200, Number(payload.displayScales?.map || payload.displayScale || 100)));
-      elements.secondScreenScaleRow.hidden = !enabled;
-      elements.secondScreenScale.value = String(displayScale);
-      elements.secondScreenScaleValue.textContent = `${displayScale}%`;
+      if (elements.secondScreenScaleRow) {
+        elements.secondScreenScaleRow.hidden = !enabled;
+        elements.secondScreenScale.value = String(displayScale);
+        elements.secondScreenScaleValue.textContent = `${displayScale}%`;
+      }
       const battleBoardVisible = payload.battleBoardVisible !== false;
       elements.secondScreenBattleBoardToggleRow.hidden = !enabled;
       elements.secondScreenBattleBoardToggle.checked = battleBoardVisible;
@@ -5033,7 +5031,7 @@
     async function setSecondScreenModuleScale(moduleId, value) {
       if (!secondScreenEnabled) return;
       const displayScale = Math.max(60, Math.min(200, Number(value || 100)));
-      if (moduleId === "map") elements.secondScreenScaleValue.textContent = `${displayScale}%`;
+      if (moduleId === "map" && elements.secondScreenScaleValue) elements.secondScreenScaleValue.textContent = `${displayScale}%`;
       if (moduleId === "battleBoard") elements.secondScreenBattleScaleValue.textContent = `${displayScale}%`;
       try {
         const response = await fetch(`${authUrl}?action=second-screen-status`, {
@@ -14834,10 +14832,10 @@
     elements.secondScreenBattleBoardToggle.addEventListener("change", () => {
       setSecondScreenBattleBoardVisible(elements.secondScreenBattleBoardToggle.checked);
     });
-    elements.secondScreenScale.addEventListener("input", () => {
+    elements.secondScreenScale?.addEventListener("input", () => {
       elements.secondScreenScaleValue.textContent = `${elements.secondScreenScale.value}%`;
     });
-    elements.secondScreenScale.addEventListener("change", () => setSecondScreenModuleScale("map", elements.secondScreenScale.value));
+    elements.secondScreenScale?.addEventListener("change", () => setSecondScreenModuleScale("map", elements.secondScreenScale.value));
     elements.secondScreenBattleScale.addEventListener("input", () => {
       elements.secondScreenBattleScaleValue.textContent = `${elements.secondScreenBattleScale.value}%`;
     });

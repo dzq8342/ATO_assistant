@@ -5,6 +5,8 @@ const campaignDashboardUrl = `${campaignStorageUrl}?section=dashboard`;
 const mapData = window.ATO_MAP_DATA || { cycles: [] };
 const mapTagData = window.ATO_MAP_TILE_TAGS || { tagDefinitions: [], tiles: {} };
 const secondScreenMode = new URLSearchParams(window.location.search).get("second") === "1";
+// 私人版：第二屏双指缩放后的本机比例（见文件末尾的手势缩放）；null 表示跟随主控台。
+let secondScreenLocalZoom = null;
 const cycleIds = mapData.cycles.map((cycle) => cycle.id);
 const c1AlternateTileAssets = Object.fromEntries(
   ["009", "013", "014", "018", "022", "023", "035"].map((id) => [id, {
@@ -1190,7 +1192,7 @@ async function loadSecondScreenMapState() {
     state = normalizeState({
       ...screen.mapDisplay,
       activeCycleId: screen.cycleId,
-      mapZoom: mapDisplayScale,
+      mapZoom: secondScreenLocalZoom ?? mapDisplayScale,
       cycles: { [screen.cycleId]: screen.map || {} },
     });
     if (focusMap) focusArgoAfterNextRender(6);
@@ -2516,8 +2518,9 @@ elements.searchInput.addEventListener("keydown", (event) => {
 });
 // 私人版：地图区域手势缩放，替代原左栏滑块。双指捏合（以两指中点为中心）缩放，电脑上
 // Ctrl+滚轮缩放（以鼠标位置为中心）。范围沿用滑块的 50%–410%；松手后取整到 10% 并存档。
-// 第二屏只显示主控台推过去的比例，不响应手势。
-if (!secondScreenMode && elements.tileGridViewport) {
+// 第二屏同样响应手势，但只在本机生效（第二屏不存档），之后主控台推送的地图更新也保留
+// 这个本地比例。
+if (elements.tileGridViewport) {
   const viewport = elements.tileGridViewport;
   let liveZoom = state.mapZoom;
   let pinch = null;
@@ -2547,6 +2550,7 @@ if (!secondScreenMode && elements.tileGridViewport) {
       zoomViewportTo(normalized, rect.width / 2, rect.height / 2);
     }
     liveZoom = normalized;
+    if (secondScreenMode) secondScreenLocalZoom = normalized;
     if (state.mapZoom === normalized) return;
     state.mapZoom = normalized;
     saveState();
