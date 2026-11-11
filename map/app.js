@@ -1355,8 +1355,8 @@ function renderControls() {
   elements.revealTileButton.hidden = state.activeCycleId === "c5";
   elements.revealUnderwaterTileButton.hidden = state.activeCycleId !== "c5";
   elements.revealSurfaceTileButton.hidden = state.activeCycleId !== "c5";
-  elements.mapZoomInput.value = String(state.mapZoom);
-  elements.mapZoomValue.textContent = `${state.mapZoom}%`;
+  if (elements.mapZoomInput) elements.mapZoomInput.value = String(state.mapZoom);
+  if (elements.mapZoomValue) elements.mapZoomValue.textContent = `${state.mapZoom}%`;
   elements.showBackToggle.checked = state.showBack;
   if (elements.hideUnknownToggle) elements.hideUnknownToggle.checked = state.hideUnknown;
   elements.showAdjacencyToggle.checked = state.showAdjacency;
@@ -2514,19 +2514,93 @@ elements.searchInput.addEventListener("keydown", (event) => {
   event.preventDefault();
   searchTilesById();
 });
-elements.mapZoomInput.addEventListener("input", () => {
-  state.mapZoom = normalizeMapZoom(elements.mapZoomInput.value);
-  elements.mapZoomValue.textContent = `${state.mapZoom}%`;
-  elements.tileGrid.style.setProperty("--map-zoom", `${state.mapZoom}%`);
-  window.requestAnimationFrame(() => centerMapViewportOnArgo());
-});
-elements.mapZoomInput.addEventListener("change", () => {
-  state.mapZoom = normalizeMapZoom(elements.mapZoomInput.value);
-  saveState();
-  renderTiles();
-  renderControls();
-  window.requestAnimationFrame(() => centerMapViewportOnArgo());
-});
+// 私人版：地图区域手势缩放，替代原左栏滑块。双指捏合（以两指中点为中心）缩放，电脑上
+// Ctrl+滚轮缩放（以鼠标位置为中心）。范围沿用滑块的 50%–410%；松手后取整到 10% 并存档。
+// 第二屏只显示主控台推过去的比例，不响应手势。
+if (!secondScreenMode && elements.tileGridViewport) {
+  const viewport = elements.tileGridViewport;
+  let liveZoom = state.mapZoom;
+  let pinch = null;
+  let commitTimer = 0;
+
+  const clampZoom = (value) => Math.max(50, Math.min(410, value));
+
+  // 把缩放比例改为 next，并让视口内 (fx, fy) 处的地图内容保持不动。
+  function zoomViewportTo(next, fx, fy) {
+    next = clampZoom(next);
+    const previous = liveZoom;
+    if (Math.abs(next - previous) < 0.01) return;
+    const ratio = next / previous;
+    const left = viewport.scrollLeft;
+    const top = viewport.scrollTop;
+    liveZoom = next;
+    elements.tileGrid.style.setProperty("--map-zoom", `${next}%`);
+    viewport.scrollLeft = (left + fx) * ratio - fx;
+    viewport.scrollTop = (top + fy) * ratio - fy;
+  }
+
+  function commitZoom() {
+    window.clearTimeout(commitTimer);
+    const normalized = normalizeMapZoom(liveZoom);
+    if (normalized !== liveZoom) {
+      const rect = viewport.getBoundingClientRect();
+      zoomViewportTo(normalized, rect.width / 2, rect.height / 2);
+    }
+    liveZoom = normalized;
+    if (state.mapZoom === normalized) return;
+    state.mapZoom = normalized;
+    saveState();
+    renderTiles();
+    renderControls();
+  }
+
+  function touchPoint(touches) {
+    const rect = viewport.getBoundingClientRect();
+    const [a, b] = touches;
+    return {
+      dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1,
+      x: (a.clientX + b.clientX) / 2 - rect.left,
+      y: (a.clientY + b.clientY) / 2 - rect.top,
+    };
+  }
+
+  viewport.addEventListener("touchstart", (event) => {
+    if (event.touches.length !== 2) return;
+    liveZoom = state.mapZoom;
+    const p = touchPoint(event.touches);
+    pinch = { dist: p.dist, zoom: liveZoom, x: p.x, y: p.y };
+  }, { passive: true });
+
+  viewport.addEventListener("touchmove", (event) => {
+    if (!pinch || event.touches.length !== 2) return;
+    event.preventDefault();
+    const p = touchPoint(event.touches);
+    // 两指一起移动时跟着平移，再以当前中点缩放
+    viewport.scrollLeft -= p.x - pinch.x;
+    viewport.scrollTop -= p.y - pinch.y;
+    pinch.x = p.x;
+    pinch.y = p.y;
+    zoomViewportTo(pinch.zoom * p.dist / pinch.dist, p.x, p.y);
+  }, { passive: false });
+
+  const endPinch = (event) => {
+    if (!pinch || event.touches.length >= 2) return;
+    pinch = null;
+    commitZoom();
+  };
+  viewport.addEventListener("touchend", endPinch, { passive: true });
+  viewport.addEventListener("touchcancel", endPinch, { passive: true });
+
+  viewport.addEventListener("wheel", (event) => {
+    if (!event.ctrlKey) return;
+    event.preventDefault();
+    if (!pinch) liveZoom = commitTimer ? liveZoom : state.mapZoom;
+    const rect = viewport.getBoundingClientRect();
+    zoomViewportTo(liveZoom * (event.deltaY < 0 ? 1.1 : 1 / 1.1), event.clientX - rect.left, event.clientY - rect.top);
+    window.clearTimeout(commitTimer);
+    commitTimer = window.setTimeout(() => { commitTimer = 0; commitZoom(); }, 250);
+  }, { passive: false });
+}
 elements.showBackToggle.addEventListener("change", () => {
   state.showBack = elements.showBackToggle.checked;
   saveState();
