@@ -1,5 +1,7 @@
 // 私人版：共享的原图查看器（主控台剧情/末日卡面、剧情书官方扫描图共用）。
-// 用法：window.atoImageViewer.open(src, alt)。首次打开时才创建对话框并注入样式。
+// 用法：window.atoImageViewer.open(src, alt, options)。首次打开时才创建对话框并注入样式。
+// options.initial = "actual"：打开时按图片原始像素 100% 显示，并从图片顶部开始（剧情书扫描图用）；
+// 默认按屏幕大小适配显示。
 // 手势：双指缩放（0.3–6 倍，以两指中点为中心）、单指拖动、双击在适配大小与 2.5 倍间
 // 切换（已缩放时双击还原）、鼠标滚轮缩放；右上角 × 或未放大时点图片外关闭。
 (function () {
@@ -85,7 +87,8 @@
     document.body.appendChild(dialog);
     const stage = dialog.querySelector(".card-image-viewer-stage");
     const img = stage.querySelector("img");
-    const MIN = 0.3, MAX = 6; // 可缩到原始适配大小的 30%
+    const MIN = 0.3; // 可缩到原始适配大小的 30%
+    let MAX = 6;
     let scale = 1, x = 0, y = 0;
     const pointers = new Map();
     let pinch = null, pan = null, moved = false, lastTap = 0;
@@ -197,20 +200,36 @@
     dialog.addEventListener("close", () => { pointers.clear(); pinch = null; pan = null; reset(); img.removeAttribute("src"); });
     window.addEventListener("resize", () => { if (dialog.open && scale > 1) apply(); });
     return {
-      open(src, alt) {
+      open(src, alt, options = {}) {
         if (!src) return;
         reset();
+        MAX = 6;
         img.alt = alt || "";
+        if (options.initial === "actual") {
+          // 等图片排好版再换算：适配大小下的显示宽度 → 原始像素宽度的倍数。
+          const showActual = () => {
+            if (!img.offsetWidth || !img.naturalWidth) return;
+            const actual = img.naturalWidth / img.offsetWidth;
+            MAX = Math.max(6, actual * 2);
+            scale = Math.min(MAX, Math.max(MIN, actual));
+            const b = base();
+            x = (b.sw - b.w * scale) / 2 - b.left; // 水平居中（比屏幕宽时 clamp 会贴到左边界范围内）
+            y = -b.top; // 图片顶部贴住屏幕顶部
+            apply();
+          };
+          img.addEventListener("load", () => requestAnimationFrame(showActual), { once: true });
+        }
         img.src = src;
         if (typeof dialog.showModal === "function") dialog.showModal();
         else dialog.setAttribute("open", "");
+        if (options.initial === "actual" && img.complete && img.naturalWidth) requestAnimationFrame(() => img.dispatchEvent(new Event("load")));
       },
     };
   };
 
   let viewer = null;
   window.atoImageViewer = {
-    open(src, alt) {
+    open(src, alt, options) {
       if (!src) return;
       if (!viewer) {
         const style = document.createElement("style");
@@ -218,7 +237,7 @@
         document.head.appendChild(style);
         viewer = createViewer();
       }
-      viewer.open(src, alt);
+      viewer.open(src, alt, options);
     },
   };
 })();
