@@ -2145,6 +2145,10 @@ window.ATO_TERMS = [
   // 冒险中枢显示为「分支冒险」；其他页面仍按全局条目显示。
   { "from": "R&R", "to": "休整冒险", "scope": "body[data-theme-dashboard]" },
   { "from": "冒险中枢", "to": "分支冒险", "scope": "body[data-theme-dashboard]" },
+  // 私人版：考察步骤的冒险提醒（「当前板块有中枢冒险」及其小标签「中枢」）、
+  // 定数框下方「本次定数」里的「中枢」，也统一成「分支冒险」。
+  { "from": "中枢冒险", "to": "分支冒险", "scope": "body[data-theme-dashboard]" },
+  { "from": "中枢", "to": "分支冒险", "scope": ".step-track-tag, .step-action-context-label, .step-action-context-count" },
   // 地图模块：故事集切换按钮、状态栏标题、图标分组提示里的 Cycle → 故事集。
   { "from": "Cycle I", "to": "故事集 I", "scope": "#cycleTabs, .map-status, .token-menu-trigger" },
   { "from": "Cycle II", "to": "故事集 II", "scope": "#cycleTabs, .map-status, .token-menu-trigger" },

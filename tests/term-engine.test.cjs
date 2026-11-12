@@ -149,3 +149,16 @@ test('八个页面的 term-language.js 版本号一致且已更新', () => {
   assert.equal(versions.size, 1, `各页面的版本号不一致：${[...versions].join('、')}`);
   assert.notEqual([...versions][0], '20260913a', '引擎改了，版本号要一起换掉，否则浏览器还用旧脚本');
 });
+
+test('私人版：主控台考察冒险提醒里的「中枢」统一成「分支冒险」', () => {
+  const dashboard = 'body[data-theme-dashboard]';
+  const chips = '.step-track-tag, .step-action-context-label, .step-action-context-count';
+  assert.equal(engine.translate('当前板块有中枢冒险', [dashboard]), '当前板块有分支冒险');
+  assert.equal(engine.translate('A12 尚未探索，请在本步骤结算冒险中枢。', [dashboard]), 'A12 尚未探索，请在本步骤结算分支冒险。');
+  assert.equal(engine.translate('中枢', [dashboard, chips]), '分支冒险');
+  assert.equal(engine.translate('已勾选：中枢 2 · R&R 1', [dashboard, chips]), '已勾选：分支冒险 2 · 休整冒险 1');
+  // 小标签以外的「中枢」不动（例如分支名里的「伪中枢」）。
+  assert.equal(engine.translate('中枢', [dashboard]), '中枢');
+  // 民间译名模式不替换。
+  assert.equal(createEngine(terms, false).translate('当前板块有中枢冒险', [dashboard]), '当前板块有中枢冒险');
+});
