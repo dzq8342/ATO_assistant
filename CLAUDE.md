@@ -12,7 +12,7 @@
    ```
    gh workflow run android-release.yml -R dzq8342/ATO_assistant --ref private-android -f version=<版本号> -f verify_only=true
    ```
-   版本号跟随最近合并的上游版本（目前是 **3.10.5**）。打包完成后，把运行页面的链接给用户，APK 在页面底部的 Artifacts 里下载。
+   版本号跟随最近合并的上游版本（目前是 **3.10.6**）。打包完成后，把运行页面的链接给用户，APK 在页面底部的 Artifacts 里下载。
 3. 在 `assets/` 下新增文件时，要把它加进 `tools/audit-public-release.ps1` 的许可名单，否则打包前的检查会失败。
 4. 提交说明用中文，开头写模块名，例如「主控台：……」「地图：……」「私人版安卓：……」。
 
