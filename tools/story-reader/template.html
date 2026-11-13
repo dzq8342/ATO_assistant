@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>剧情书速查</title>
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --panel: #fffdf9;
+    --ink: #2b231c;
+    --muted: #7a6b5d;
+    --line: #e4d9ca;
+    --accent: #7a3e1d;
+    --accent-soft: #f0e2d4;
+    --link: #9a4a12;
+    --font-size: 17px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1b1815; --panel: #24201c; --ink: #ece4d8; --muted: #a8998a;
+      --line: #3a332c; --accent: #e0a173; --accent-soft: #3a2c21; --link: #f0b27f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1b1815; --panel: #24201c; --ink: #ece4d8; --muted: #a8998a;
+    --line: #3a332c; --accent: #e0a173; --accent-soft: #3a2c21; --link: #f0b27f;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.6 "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  button, input { font: inherit; color: inherit; }
+  a { color: var(--link); }
+
+  /* 顶栏：返回、书目切换、搜索 */
+  .top {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 8px 16px 10px;
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+  .top-row { display: flex; gap: 8px; align-items: center; }
+  .icon-btn {
+    flex: 0 0 auto; min-width: 44px; height: 40px; padding: 0 10px;
+    border: 1px solid var(--line); border-radius: 8px; background: transparent;
+    font-size: 15px; cursor: pointer;
+  }
+  .icon-btn:disabled { opacity: .35; }
+  .search {
+    flex: 1; min-width: 0; height: 40px; padding: 0 12px;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+    font-size: 16px;
+  }
+  .books { display: flex; gap: 6px; margin-top: 8px; overflow-x: auto; scrollbar-width: none; }
+  .books::-webkit-scrollbar { display: none; }
+  .book-tab {
+    flex: 0 0 auto; height: 34px; padding: 0 14px;
+    border: 1px solid var(--line); border-radius: 17px; background: transparent;
+    font-size: 14px; cursor: pointer; white-space: nowrap;
+  }
+  .book-tab[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: var(--panel); font-weight: 600; }
+
+  /* 底部留白 = 底栏实际高度 + 一点余量；底栏高度由脚本量出来写进 --bottom-h，
+     没量到时按「按钮 + 上下边距 + 屏幕底部安全区」估算。 */
+  main {
+    max-width: 760px; margin: 0 auto;
+    padding: 12px 16px calc(var(--bottom-h, calc(64px + env(safe-area-inset-bottom))) + 40px);
+  }
+  .crumb { color: var(--muted); font-size: 13px; margin: 4px 0 10px; }
+  .crumb a { color: var(--muted); }
+  h1 { font-size: 20px; line-height: 1.4; margin: 6px 0 12px; }
+  h2 { font-size: 15px; color: var(--muted); font-weight: 600; margin: 20px 0 8px; }
+
+  .list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); overflow: hidden; }
+  .list li + li { border-top: 1px solid var(--line); }
+  .list a {
+    display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 14px;
+    color: var(--ink); text-decoration: none;
+  }
+  .list a:active { background: var(--accent-soft); }
+  .list .label { flex: 1; min-width: 0; }
+  .list .count, .list .sub { color: var(--muted); font-size: 13px; }
+  .list .sub { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .list .chev { color: var(--muted); }
+
+  /* 主线这类纯编号的段落用数字格子 */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
+  .grid a {
+    display: flex; align-items: center; justify-content: center; height: 44px;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
+    color: var(--ink); text-decoration: none; font-variant-numeric: tabular-nums;
+  }
+  .grid a.titled { grid-column: span 2; padding: 0 6px; font-size: 13px; text-align: center; line-height: 1.3; }
+  .grid a.recent { border-color: var(--accent); }
+
+  .jump {
+    display: flex; gap: 8px; margin: 0 0 14px;
+  }
+  .jump input { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); font-size: 18px; letter-spacing: 1px; }
+  .jump button { height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: var(--accent); color: var(--panel); font-weight: 600; cursor: pointer; }
+
+  /* 阅读页 */
+  .entry-title { font-size: 22px; margin: 4px 0 4px; }
+  .entry-meta { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+  .text { font-size: var(--font-size); line-height: 1.85; overflow-wrap: anywhere; }
+  .text p { margin: 0 0 .9em; }
+  .text a.jumplink {
+    display: inline-block; padding: 0 6px; margin: 0 1px; border-radius: 6px;
+    background: var(--accent-soft); color: var(--link); font-weight: 700; text-decoration: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .text mark { background: #f6d77a; color: #2b231c; border-radius: 2px; }
+  .empty { color: var(--muted); padding: 24px 0; text-align: center; }
+
+  .bottom {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+    display: flex; gap: 8px; justify-content: center;
+    padding: 8px 16px; padding-bottom: max(8px, env(safe-area-inset-bottom));
+    background: var(--panel); border-top: 1px solid var(--line);
+  }
+  .bottom a, .bottom button {
+    flex: 1; max-width: 240px; height: 44px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line); border-radius: 8px; background: transparent;
+    color: var(--ink); text-decoration: none; font-size: 15px; cursor: pointer;
+  }
+  .bottom[hidden] { display: none; }
+  .bottom .disabled { opacity: .35; pointer-events: none; }
+
+  .result-snippet { color: var(--muted); font-size: 13px; display: block; margin-top: 2px; }
+  .tools { display: flex; gap: 8px; justify-content: flex-end; margin: -4px 0 8px; }
+  .tools button { height: 32px; min-width: 40px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: transparent; cursor: pointer; font-size: 14px; }
+  .loading { padding: 80px 16px; text-align: center; color: var(--muted); }
+  .note { color: var(--muted); font-size: 12px; margin-top: 28px; text-align: center; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <button id="back" class="icon-btn" type="button" aria-label="返回上一页">‹ 返回</button>
+    <input id="search" class="search" type="search" enterkeyhint="search" placeholder="段落编号（如 47）或关键词" autocomplete="off">
+  </div>
+  <nav id="books" class="books" aria-label="选择故事集"></nav>
+</header>
+<main id="view"><div class="loading">正在载入剧情书……</div></main>
+<nav id="bottom" class="bottom" hidden></nav>
+
+<script id="story-data" type="text/plain">__DATA__</script>
+<script>
+(function () {
+  "use strict";
+  var DATA = null;
+  var view = document.getElementById("view");
+  var bottom = document.getElementById("bottom");
+  var searchInput = document.getElementById("search");
+  var booksNav = document.getElementById("books");
+  var STORE = "ato-story-reader-v1";
+  var prefs = { fontSize: 17, recent: [], theme: "" };
+  try { Object.assign(prefs, JSON.parse(localStorage.getItem(STORE) || "{}")); } catch (e) {}
+  function savePrefs() { try { localStorage.setItem(STORE, JSON.stringify(prefs)); } catch (e) {} }
+  function applyPrefs() {
+    document.documentElement.style.setProperty("--font-size", prefs.fontSize + "px");
+    if (prefs.theme) document.documentElement.setAttribute("data-theme", prefs.theme);
+    else document.documentElement.removeAttribute("data-theme");
+  }
+  applyPrefs();
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  async function loadData() {
+    var b64 = document.getElementById("story-data").textContent.trim();
+    var bin = atob(b64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    var stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+    var text = await new Response(stream).text();
+    return JSON.parse(text);
+  }
+
+  // 索引：每本书里 key → 段落、段落 → 章节、编号 → 段落列表
+  function buildIndex(book) {
+    book.byKey = new Map();
+    book.byId = new Map();
+    book.chapterOf = [];
+    book.chapters.forEach(function (ch, ci) {
+      ch.e.forEach(function (ei, pos) {
+        var e = book.entries[ei];
+        e.ci = ci; e.pos = pos;
+        book.byKey.set(e.k, e);
+        var id = normalizeId(e.i);
+        if (id) {
+          if (!book.byId.has(id)) book.byId.set(id, []);
+          book.byId.get(id).push(e);
+        }
+        // 「0047 某某」这种标题里带编号的，也按编号收录
+        var m = /^(M?\d{3,4})(?!\d)/i.exec(e.t);
+        if (m) {
+          var tid = normalizeId(m[1]);
+          if (tid !== id) {
+            if (!book.byId.has(tid)) book.byId.set(tid, []);
+            book.byId.get(tid).push(e);
+          }
+        }
+      });
+    });
+  }
+  function normalizeId(id) {
+    id = String(id || "").trim().toUpperCase();
+    var m = /^(M?)(\d{1,4})$/.exec(id);
+    if (!m) return id;
+    return m[1] + m[2].padStart(m[1] ? 3 : 4, "0");
+  }
+  function isMainChapter(book, ci) {
+    var ch = book.chapters[ci];
+    return ch && (ch.k === "main" || /主线故事/.test(ch.t));
+  }
+  // 跳转目标：同一章节优先，其次主线，再其次本书任意位置（与剧情书页面的规则一致）
+  function resolve(book, rawId, fromEntry) {
+    var list = book.byId.get(normalizeId(rawId));
+    if (!list || !list.length) return null;
+    if (fromEntry) {
+      var same = list.find(function (e) { return e.ci === fromEntry.ci; });
+      if (same) return same;
+    }
+    var main = list.find(function (e) { return isMainChapter(book, e.ci); });
+    return main || list[0];
+  }
+
+  function bookById(id) { return DATA.books.find(function (b) { return b.id === id; }) || DATA.books[0]; }
+  function entryHref(book, e) { return "#/" + book.id + "/e/" + encodeURIComponent(e.k); }
+  function chapterHref(book, ci) { return "#/" + book.id + "/c/" + ci; }
+
+  function linkify(book, entry, text, highlight) {
+    var html = esc(text);
+    html = html.replace(/(请参阅|参见|返回|前往|查看|见|See|Go to|Return to)(\s*)(M\d{3,4}|\d{4})(?!\d)/gi, function (all, verb, space, id) {
+      var target = resolve(book, id, entry);
+      if (!target || target === entry) return all;
+      return verb + space + '<a class="jumplink" href="' + entryHref(book, target) + '">' + id + "</a>";
+    });
+    if (highlight) {
+      var h = esc(highlight).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      // 只在标签外面高亮
+      html = html.replace(new RegExp("(<[^>]+>)|(" + h + ")", "g"), function (all, tag, hit) {
+        return tag ? tag : "<mark>" + hit + "</mark>";
+      });
+    }
+    return html.split(/\n{2,}/).map(function (p) { return "<p>" + p.replace(/\n/g, "<br>") + "</p>"; }).join("");
+  }
+
+  function rememberRecent(book, e) {
+    var item = book.id + "|" + e.k;
+    prefs.recent = [item].concat((prefs.recent || []).filter(function (x) { return x !== item; })).slice(0, 12);
+    prefs.lastBook = book.id;
+    savePrefs();
+  }
+
+  function renderBooks(current) {
+    booksNav.innerHTML = DATA.books.map(function (b) {
+      return '<button class="book-tab" type="button" data-book="' + b.id + '" aria-current="' + (b.id === current ? "true" : "false") + '">' + esc(b.name) + "</button>";
+    }).join("");
+  }
+  booksNav.addEventListener("click", function (ev) {
+    var btn = ev.target.closest("[data-book]");
+    if (btn) location.hash = "#/" + btn.dataset.book;
+  });
+
+  function setBottom(html) {
+    bottom.hidden = !html;
+    bottom.innerHTML = html || "";
+    syncBottomSpace();
+  }
+  // 量出底栏的真实高度（含 iPhone 底部横条的安全区），给正文底部留出同样的空白
+  function syncBottomSpace() {
+    var h = bottom.hidden ? 0 : Math.ceil(bottom.getBoundingClientRect().height);
+    document.documentElement.style.setProperty("--bottom-h", h + "px");
+  }
+  window.addEventListener("resize", syncBottomSpace);
+  if (window.ResizeObserver) new ResizeObserver(syncBottomSpace).observe(bottom);
+
+  // 书目首页：编号速跳 + 最近看过 + 章节列表
+  function renderBook(book) {
+    var recent = (prefs.recent || []).map(function (x) {
+      var parts = x.split("|");
+      if (parts[0] !== book.id) return null;
+      return book.byKey.get(parts[1]);
+    }).filter(Boolean).slice(0, 6);
+    var html = '<form class="jump" id="jumpForm"><input id="jumpInput" inputmode="numeric" placeholder="输入主线段落编号，如 0047" aria-label="段落编号"><button type="submit">跳转</button></form>';
+    if (recent.length) {
+      html += "<h2>最近看过</h2><ul class=\"list\">" + recent.map(function (e) {
+        return '<li><a href="' + entryHref(book, e) + '"><span class="label">' + esc(e.t) + '<span class="sub">' + esc(book.chapters[e.ci].t) + '</span></span><span class="chev">›</span></a></li>';
+      }).join("") + "</ul>";
+    }
+    html += "<h2>章节</h2><ul class=\"list\">" + book.chapters.map(function (ch, ci) {
+      return '<li><a href="' + chapterHref(book, ci) + '"><span class="label">' + esc(ch.t) + '</span><span class="count">' + ch.e.length + ' 段</span><span class="chev">›</span></a></li>';
+    }).join("") + "</ul>";
+    html += '<p class="note">官方中文校对稿' + (DATA.revision ? "（" + esc(DATA.revision) + "）" : "") + "，仅供自用。</p>";
+    view.innerHTML = html;
+    setBottom("");
+    document.getElementById("jumpForm").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var value = document.getElementById("jumpInput").value.trim();
+      if (!value) return;
+      var target = resolve(book, value, null);
+      if (target) location.hash = entryHref(book, target);
+      else alert("本故事集没有编号为「" + value + "」的段落。");
+    });
+  }
+
+  // 章节页：主线用数字格子，其他用列表；分支冒险按遭遇分组
+  function renderChapter(book, ci) {
+    var ch = book.chapters[ci];
+    if (!ch) return renderBook(book);
+    var entries = ch.e.map(function (i) { return book.entries[i]; });
+    var html = '<div class="crumb"><a href="#/' + book.id + '">' + esc(book.name) + "</a></div><h1>" + esc(ch.t) + "</h1>";
+    var numeric = entries.filter(function (e) { return /^\d{4}$/.test(e.t.split(/\s/)[0]); }).length > entries.length * 0.6;
+    var bare = function (e) { return /^\d{4}$/.test(e.t); };
+    if (numeric) {
+      // 有名字的段落（遭遇开头、带标题的编号段）列在上面，纯编号段落排成数字格子
+      var named = entries.filter(function (e) { return !bare(e); });
+      var numbers = entries.filter(bare);
+      if (named.length) html += '<ul class="list">' + named.map(function (e) {
+        return '<li><a href="' + entryHref(book, e) + '"><span class="label">' + esc(e.t) + '</span><span class="chev">›</span></a></li>';
+      }).join("") + "</ul>";
+      if (numbers.length) html += (named.length ? '<h2>编号段落</h2>' : '') + '<div class="grid">' + numbers.map(function (e) {
+        return '<a href="' + entryHref(book, e) + '">' + esc(e.t) + "</a>";
+      }).join("") + "</div>";
+    } else {
+      var lastGroup = null;
+      html += entries.map(function (e, idx) {
+        var out = "";
+        var group = e.n && e.n !== e.t ? e.n : null;
+        if (idx === 0 || group !== lastGroup) {
+          if (idx > 0) out += "</ul>";
+          if (group) out += "<h2>" + esc(group) + "</h2>";
+          out += '<ul class="list"' + (group ? "" : ' style="margin-top:8px"') + ">";
+        }
+        lastGroup = group;
+        var snippet = e.x.replace(/\s+/g, " ").slice(0, 40);
+        out += '<li><a href="' + entryHref(book, e) + '"><span class="label">' + esc(e.t) + '<span class="sub">' + esc(snippet) + '</span></span><span class="chev">›</span></a></li>';
+        return out;
+      }).join("") + "</ul>";
+    }
+    view.innerHTML = html;
+    setBottom("");
+  }
+
+  function renderEntry(book, key, highlight) {
+    var e = book.byKey.get(key);
+    if (!e) { view.innerHTML = '<div class="empty">找不到这个段落。</div>'; setBottom(""); return; }
+    var ch = book.chapters[e.ci];
+    rememberRecent(book, e);
+    var html = '<div class="crumb"><a href="#/' + book.id + '">' + esc(book.name) + '</a> › <a href="' + chapterHref(book, e.ci) + '">' + esc(ch.t) + "</a></div>";
+    html += '<div class="tools"><button type="button" data-font="-1" aria-label="字号减小">A−</button><button type="button" data-font="1" aria-label="字号增大">A+</button><button type="button" data-theme-toggle aria-label="切换深浅色">◐</button></div>';
+    html += '<h1 class="entry-title">' + esc(e.t) + "</h1>";
+    if (e.n && e.n !== e.t) html += '<div class="entry-meta">' + esc(e.n) + "</div>";
+    html += '<article class="text">' + (e.x ? linkify(book, e, e.x, highlight) : '<p class="empty">这一段没有正文。</p>') + "</article>";
+    view.innerHTML = html;
+    var prev = ch.e[e.pos - 1] != null ? book.entries[ch.e[e.pos - 1]] : null;
+    var next = ch.e[e.pos + 1] != null ? book.entries[ch.e[e.pos + 1]] : null;
+    setBottom(
+      (prev ? '<a href="' + entryHref(book, prev) + '" replace>‹ 上一段</a>' : '<a class="disabled">‹ 上一段</a>') +
+      '<a href="' + chapterHref(book, e.ci) + '">目录</a>' +
+      (next ? '<a href="' + entryHref(book, next) + '" replace>下一段 ›</a>' : '<a class="disabled">下一段 ›</a>')
+    );
+  }
+
+  function renderSearch(book, query) {
+    query = query.trim();
+    var html = '<div class="crumb"><a href="#/' + book.id + '">' + esc(book.name) + "</a> › 搜索</div>";
+    if (!query) { view.innerHTML = html; setBottom(""); return; }
+    var results = [];
+    var idHit = /^M?\d{1,4}$/i.test(query) ? book.byId.get(normalizeId(query)) || [] : [];
+    idHit.forEach(function (e) { results.push({ e: e, snippet: "" }); });
+    var q = query.toLowerCase();
+    for (var i = 0; i < book.entries.length && results.length < 200; i++) {
+      var e = book.entries[i];
+      if (idHit.indexOf(e) >= 0) continue;
+      var inTitle = e.t.toLowerCase().indexOf(q) >= 0;
+      var at = e.x.toLowerCase().indexOf(q);
+      if (!inTitle && at < 0) continue;
+      var snippet = at >= 0 ? (at > 18 ? "…" : "") + e.x.slice(Math.max(0, at - 18), at + q.length + 30).replace(/\s+/g, " ") + "…" : "";
+      results.push({ e: e, snippet: snippet });
+    }
+    html += "<h1>「" + esc(query) + "」共 " + results.length + (results.length >= 200 ? "+" : "") + " 条</h1>";
+    if (!results.length) html += '<div class="empty">本故事集里没有找到。可以点上方切换别的故事集再搜。</div>';
+    else html += '<ul class="list">' + results.map(function (r) {
+      var href = entryHref(book, r.e) + (r.snippet ? "?q=" + encodeURIComponent(query) : "");
+      return '<li><a href="' + href + '"><span class="label">' + esc(r.e.t) + '<span class="sub">' + esc(book.chapters[r.e.ci].t) + "</span>" +
+        (r.snippet ? '<span class="result-snippet">' + esc(r.snippet) + "</span>" : "") + '</span><span class="chev">›</span></a></li>';
+    }).join("") + "</ul>";
+    view.innerHTML = html;
+    setBottom("");
+  }
+
+  // 路由：#/c1、#/c1/c/3、#/c1/e/<key>?q=高亮词、#/c1/s/<关键词>
+  function route() {
+    var hash = location.hash.replace(/^#\/?/, "");
+    var query = "";
+    var qi = hash.indexOf("?q=");
+    if (qi >= 0) { query = decodeURIComponent(hash.slice(qi + 3)); hash = hash.slice(0, qi); }
+    var parts = hash.split("/");
+    var book = bookById(parts[0] || prefs.lastBook || "c1");
+    renderBooks(book.id);
+    var kind = parts[1], arg = parts.slice(2).join("/");
+    if (kind === "e") renderEntry(book, decodeURIComponent(arg), query);
+    else if (kind === "c") renderChapter(book, Number(arg));
+    else if (kind === "s") { renderSearch(book, decodeURIComponent(arg)); }
+    else renderBook(book);
+    if (kind !== "s" && document.activeElement !== searchInput) searchInput.value = "";
+    window.scrollTo(0, 0);
+    document.getElementById("back").disabled = history.length <= 1;
+  }
+
+  document.getElementById("back").addEventListener("click", function () { history.back(); });
+  var searchTimer = null;
+  function currentBookId() { return (location.hash.replace(/^#\/?/, "").split("/")[0]) || prefs.lastBook || "c1"; }
+  searchInput.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Enter") return;
+    ev.preventDefault();
+    var value = searchInput.value.trim();
+    if (!value) return;
+    var book = bookById(currentBookId());
+    // 纯编号且只有一个结果：直接打开
+    if (/^M?\d{1,4}$/i.test(value)) {
+      var target = resolve(book, value, null);
+      if (target && (book.byId.get(normalizeId(value)) || []).length === 1) { location.hash = entryHref(book, target); searchInput.blur(); return; }
+    }
+    location.hash = "#/" + book.id + "/s/" + encodeURIComponent(value);
+    searchInput.blur();
+  });
+
+  view.addEventListener("click", function (ev) {
+    var font = ev.target.closest("[data-font]");
+    if (font) {
+      prefs.fontSize = Math.min(28, Math.max(13, prefs.fontSize + Number(font.dataset.font)));
+      savePrefs(); applyPrefs();
+      return;
+    }
+    if (ev.target.closest("[data-theme-toggle]")) {
+      var dark = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() === "#1b1815";
+      prefs.theme = dark ? "light" : "dark";
+      savePrefs(); applyPrefs();
+    }
+  });
+  // 上一段 / 下一段 不往历史里堆，返回键直接回到进入阅读前的页面
+  bottom.addEventListener("click", function (ev) {
+    var a = ev.target.closest("a[replace]");
+    if (!a) return;
+    ev.preventDefault();
+    location.replace(a.getAttribute("href"));
+  });
+
+  loadData().then(function (data) {
+    DATA = data;
+    DATA.books.forEach(buildIndex);
+    window.addEventListener("hashchange", route);
+    route();
+  }).catch(function (error) {
+    view.innerHTML = '<div class="empty">载入失败：' + esc(error && error.message || error) + "<br>请用较新的 Chrome 或系统浏览器打开。</div>";
+  });
+})();
+</script>
+</body>
+</html>
