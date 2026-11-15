@@ -1066,7 +1066,7 @@ button.gear-group-name:hover {
 <link rel="stylesheet" href="../assets/card-art.css?v=20261017-corners1">
 <script src="../assets/card-art.js?v=20261017-corners1" defer></script>
   <script src="../story/data/english-source-data.js?v=20261011-english4"></script>
-  <script src="../assets/theme.js?v=20261001" defer></script>
+  <script src="../assets/theme.js?v=20261114-light-sidebar1" defer></script>
   <link rel="stylesheet" href="trade-planner.css?v=20261019-negotiation-layout1">
   <!-- Mobile composition is enabled only by the installed APK in portrait. -->
   <link rel="stylesheet" href="../assets/mobile/common.css?v=20261028-apk-portrait1">
@@ -1123,7 +1123,7 @@ button.gear-group-name:hover {
   <script src="../assets/page-focus-router.js?v=20261028-android-return1"></script>
   <script src="../assets/campaign-session.js?v=20260917"></script>
   <script src="../assets/campaign-notes.js?v=20261015"></script>
-  <script src="../assets/cycle-symbols.js?v=20260918"></script>
+  <script src="../assets/cycle-symbols.js?v=20261115-module-logo"></script>
   <script src="tech-page-layout.js?v=20261027-card-prerequisites"></script>
   <script src="tech-tree.js?v=20261001-c4-gutters"></script>
   <script src="structure-card-types.js?v=20261004-large"></script>
@@ -1221,6 +1221,7 @@ const TITAN_NAMES_ZH = {
 
 let gearProductionData = null;
 let gearCardImages = {};
+let gearCardDetails = {};
 let gearPartLabels = {};
 
 async function loadGearProductionData() {
@@ -1237,10 +1238,12 @@ async function loadGearProductionData() {
     if (imagesResponse.ok) {
       const payload = await imagesResponse.json();
       gearCardImages = payload?.images || {};
+      gearCardDetails = payload?.cards || {};
     }
   } catch (e) {
     console.warn('Failed to load gear card images:', e);
     gearCardImages = {};
+    gearCardDetails = {};
   }
   try {
     const labelsResponse = await fetch(GEAR_PART_LABELS_URL, { cache: 'no-cache' });
@@ -2134,10 +2137,11 @@ function arsenalCatalog() {
   const catalog = new Map();
   // The complete card dictionary also includes loot and starting equipment.
   // Their card IDs identify the cycle even when there is no production recipe.
+  const cardCycles = { A: 'c1', B: 'c2', C: 'c3', D: 'c4', E: 'c5' };
   for (const rawId of Object.keys(gearProductionData?.gearCards || {})) {
     const gearId = window.ATO_GEAR_INVENTORY.gearKey(rawId);
     if (!gearId) continue;
-    const cycle = { A: 'c1', B: 'c2', C: 'c3', D: 'c4', E: 'c5' }[gearId[0]];
+    const cycle = gearProductionData?.gearCycles?.[gearId] || cardCycles[gearId[0]];
     catalog.set(gearId, { gearId, cycles: cycle ? [cycle] : [], techIds: [] });
   }
   for (const entry of gearProductionData?.techProduction || []) {
@@ -2157,11 +2161,13 @@ function arsenalCatalog() {
   return [...catalog.values()].map(item => {
     const name = getGearName(item.gearId);
     const part = gearPart(item.gearId);
+    const card = gearCardDetails[item.gearId];
+    const searchNames = [name, gearProductionData?.gearCards?.[item.gearId], card?.title, ...(card?.aliases || [])];
     return {
       ...item, name, part,
       ...(inventory[item.gearId] || { quantity: 0, manufactured: 0 }),
       recorded: Object.prototype.hasOwnProperty.call(inventory, item.gearId),
-      searchText: `${item.gearId} ${name} ${gearProductionData?.gearCards?.[item.gearId] || ''} ${part.label} ${item.techIds.map(getTechDisplayName).join(' ')}`.toLowerCase(),
+      searchText: [item.gearId, ...searchNames, part.label, ...item.techIds.map(getTechDisplayName)].join(' ').toLowerCase(),
     };
   }).sort((a, b) => a.gearId.localeCompare(b.gearId));
 }
@@ -3033,6 +3039,7 @@ const gearCraftOperations = new Map();
 const gearRecordSyncChannel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('ato-record-sync-v1') : null;
 const structureTechMapSyncChannel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('ato-map-sync-v1') : null;
 const dashboardSyncChannel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('ato-dashboard-sync-v1') : null;
+const technologySyncChannel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('ato-technology-sync-v1') : null;
 let gearOnlyCurrentCycle = true;
 let gearOnlyCraftable = false;
 let gearGroupByPart = false;
@@ -3793,6 +3800,7 @@ async function saveCampaignTechnologySection() {
       if (!response.ok || !payload?.ok) throw new Error(payload?.error || `HTTP ${response.status}`);
       campaignTechRevision = Math.max(0, Number(payload.revision || campaignTechRevision));
       campaignTechBaseState = sectionState;
+      technologySyncChannel?.postMessage({ revision: campaignTechRevision });
       conflictRetries = 0;
     } while (campaignSavePending);
     campaignSaveQueuedBeforeReady = false;
@@ -4468,7 +4476,7 @@ function updateTechnologyTheme() {
   const cycleId = MAIN_CYCLE_BY_TECH_CYCLE[currentCycle] || 'c1';
   if (document.body.dataset.cycle === cycleId) return;
   document.body.dataset.cycle = cycleId;
-  window.ATO_CYCLE_SYMBOLS?.prependTitleIcon(document.querySelector('#technologyTitle'), cycleId, '../');
+  window.ATO_CYCLE_SYMBOLS?.prependModuleLogo(document.querySelector('#technologyTitle'), 'technology', '../');
 }
 function renderCycleButton() {
   updateTechnologyTheme();
