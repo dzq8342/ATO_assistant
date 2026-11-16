@@ -82,7 +82,7 @@
     "故事书跳转器": "Storybook Reader",
     "ATO 第二屏幕": "ATO Second Screen",
     "ATO 战役简报": "ATO Campaign Report",
-    "英雄记录表": "Argonaut Sheet",
+    "英雄记录表": "Argonaut Sheet", "阿尔戈英雄记录表": "Argonaut Sheet",
     "阿尔戈号记录表": "Argo Sheet",
     "使用账号和密码登录后，存档会自动同步到当前账号。": "Sign in to sync saves to your account automatically.",
     "另一个主控制台正在编辑。本页只读，不会保存修改。": "Another dashboard is editing this campaign. This page is read-only.",
