@@ -2676,6 +2676,9 @@
         flex: 1 1 auto;
         min-height: 0;
         max-height: none;
+        /* 列表高度固定后，每一天的格子要按内容撑开（例如阿尔戈英雄陵墓的备注行），
+           否则会被压成同样高度、多出来的部分盖住下一天。 */
+        grid-auto-rows: max-content;
         overscroll-behavior: contain;
       }
     }
