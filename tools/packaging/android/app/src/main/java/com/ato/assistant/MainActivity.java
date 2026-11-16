@@ -321,11 +321,13 @@ public final class MainActivity extends Activity {
         // Explicit story targets must open at the requested entry without
         // replacing or silently reusing an existing reader's current position.
         if (TabNavigationPolicy.canReuse(module, currentUrl, url)) {
+          boolean alreadyActive = tab == activeTab;
+          // 切到别的标签时 selectTab 已经发过同步请求；只有本来就在前台时才需要在这里补发。
           selectTab(tab);
-          if ("dashboard".equals(module) || "theatre".equals(module)) {
+          if (alreadyActive && ("dashboard".equals(module) || "theatre".equals(module))) {
             // Saved module data may have changed while the console was hidden.
             // Refresh its existing page in place rather than reloading it.
-            tab.view.evaluateJavascript("window.dispatchEvent(new CustomEvent('ato-module-sync-request'))", null);
+            tab.view.evaluateJavascript(MODULE_SYNC_SCRIPT, null);
           }
           return;
         }
@@ -337,8 +339,15 @@ public final class MainActivity extends Activity {
     selectTab(tab);
   }
 
+  // 私人版：点顶部标签切换页面时，网页收不到 focus 事件，存档在别的标签里改过也不会重新读取
+  // （例如在主控台移动阿尔戈号后切到地图，位置不变）。切换时补发各模块都在监听的同步请求，
+  // 地图、记录表、英雄、科技、剧场、主控台会就地重新读取存档；没有监听的页面（如剧情书）不受影响。
+  private static final String MODULE_SYNC_SCRIPT =
+      "window.dispatchEvent(new CustomEvent('ato-module-sync-request'))";
+
   private void selectTab(PageTab tab) {
     if (tab == null || tab.closed) return;
+    boolean switching = activeTab != tab;
     if (activeTab != null && activeTab != tab && activeTab.view != null) {
       // The system TTS engine is shared; finish the old page's utterance before switching.
       if (!storyTtsId.isEmpty()) {
@@ -356,6 +365,7 @@ public final class MainActivity extends Activity {
     currentStorySession = tab.story;
     tab.view.setVisibility(View.VISIBLE);
     updateTabs(true);
+    if (switching && tab.view != null) tab.view.evaluateJavascript(MODULE_SYNC_SCRIPT, null);
   }
 
   // 私人版：关闭标签页时 WebView 被直接销毁，页面收不到 pagehide，这里补发（剧情书据此把第二屏切回地图）。

@@ -6698,6 +6698,14 @@
         }
         syncDashboardMapSnapshot(savedCycle.cycleId, savedCycle.cycle, savedCycle.cycleState);
         updateDashboardTitanXTrack();
+        // 私人版：通知已经打开的地图页（以及别的主控台）重新读取地图。以前只写存档不通知，
+        // 地图标签页要刷新才看得到阿尔戈号的新位置。带上本页 pageId，本页自己的监听会忽略它。
+        structureTechMapSyncChannel?.postMessage({
+          source: "map-command",
+          pageId: dashboardPageId,
+          revision: commandState.revision,
+          profileId: commandState.profileId,
+        });
         setMapCommandStatus(message);
         if (typeof refreshStructureTechContext === "function") {
           void refreshStructureTechContext().catch(() => {});
