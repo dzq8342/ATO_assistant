@@ -1552,6 +1552,33 @@
     html:not(.ato-apk-portrait) body > main.app {
       padding-top: 12px;
     }
+
+    /* 私人版：存档名称和当前故事集放到「导出」左边，和按钮排成一行。 */
+    @media (min-width: 981px) {
+      html:not(.ato-apk-portrait) .topbar {
+        align-items: center;
+      }
+
+      html:not(.ato-apk-portrait) .topbar-tools {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      html:not(.ato-apk-portrait) .topbar-tools > .header-fields {
+        width: auto;
+        flex: 0 1 auto;
+        grid-template-columns: minmax(150px, 230px) minmax(130px, 180px);
+      }
+
+      html:not(.ato-apk-portrait) .topbar-tools > .toolbar {
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+      }
+    }
   </style>
   <script src="../story/data/english-source-data.js?v=20261011-english4"></script>
   <script src="../assets/theme.js?v=20261114-light-sidebar1" defer></script>
