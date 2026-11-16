@@ -2593,6 +2593,13 @@
         width: 100%;
       }
     }
+    /* 私人版：故事集选择放在标题右侧，和标题上下居中对齐。 */
+    .topbar .title-row {
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px 32px;
+    }
+
     /* 私人版：不需要检查上游更新，也不显示作者那一行。整块「版本更新与版权信息」隐藏，
        节点保留，免得更新脚本和竖屏手机布局找不到它报错。 */
     section.app-updates {
@@ -2669,6 +2676,11 @@
       <div>
         <div class="title-row">
           <h1 id="dashboardTitle" class="cycle-title">ATO 战役主控台</h1>
+          <!-- 私人版：故事集选择从导航栏移到标题右侧（导航多了「幻忆剧场」后它被挤到第二行）。 -->
+          <label class="title-cycle-control">
+            当前 Cycle
+            <select id="cycleSelect"></select>
+          </label>
         </div>
       </div>
       <section class="day-card" aria-label="当前天数">
@@ -2693,10 +2705,6 @@
         <a class="record-card-link" href="./story/index.html" data-cycle-link data-story-book-link><span class="nav-icon" aria-hidden="true" style="--nav-icon-w:16px;--nav-icon-h:16px;--icon-src:url(../assets/icons/story.svg?v=apk-ui-a72da92bdf63)"></span>故事书</a>
         <a id="theatreLink" class="record-card-link" href="./theatre/index.html" data-cycle-link hidden><span class="nav-icon" aria-hidden="true" style="--nav-icon-w:15px;--nav-icon-h:17px;--icon-src:url(../assets/icons/theatre-nav.svg?v=apk117)"></span><span data-term-variant="fan" data-language-ignore>忆识剧场</span><span data-term-variant="official" data-language-ignore hidden>幻忆剧场</span><span data-term-variant="en" data-language-ignore hidden>Mnestis Theatre</span></a>
       </nav>
-      <label class="title-cycle-control">
-        当前 Cycle
-        <select id="cycleSelect"></select>
-      </label>
     </div>
 
     <section id="dashboardWriterNotice" class="dashboard-writer-notice" role="status" aria-live="polite" hidden>
