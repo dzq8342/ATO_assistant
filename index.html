@@ -2611,26 +2611,129 @@
       display: none !important;
     }
 
-    /* 私人版：宽屏两栏时，左栏「今日流程」和右栏始终各自滚动；在两栏以外的地方
-       （标题、导航、两侧和中间的空白）滑动才滚整页。滚到栏的尽头也不会带着整页走。
-       两栏的高度由脚本 syncDashboardColumnScroll() 算成「从栏顶到屏幕底」，
-       这样标题还露在上面时，栏的底部也不会被挡在屏幕外。 */
+    /* 私人版：宽屏（两栏）时整页固定为一屏高、不再滚动；左栏「今日流程」和右栏各自滚动。
+       右栏只留日期轨并铺满整栏，战役日志、用户与存档、杂项设置收进「工具」抽屉
+       （导航栏右端的按钮，脚本见 setupDashboardToolsDrawer）。 */
     @media (min-width: 1041px) {
+      html:not(.ato-apk-portrait):has(> body > #appShell:not([hidden])),
+      html:not(.ato-apk-portrait):has(> body > #appShell:not([hidden])) > body {
+        height: 100%;
+        overflow: hidden;
+      }
+
       html:not(.ato-apk-portrait) #appShell.app {
-        padding-bottom: 0;
+        height: 100vh;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 12px;
       }
 
-      html:not(.ato-apk-portrait) #appShell .grid {
-        height: calc(100vh - 12px);
-        height: calc(100dvh - 12px);
+      html:not(.ato-apk-portrait) #appShell.app > * {
+        flex: 0 0 auto;
       }
 
-      html:not(.ato-apk-portrait) #appShell .grid > :is(.panel, .stack) {
-        max-height: var(--dashboard-column-height, calc(100dvh - 12px));
+      html:not(.ato-apk-portrait) #appShell.app > .grid {
+        flex: 1 1 auto;
+        min-height: 0;
+        grid-template-rows: minmax(0, 1fr);
+      }
+
+      html:not(.ato-apk-portrait) #appShell .grid > .panel {
+        max-height: 100%;
         overflow-y: auto;
         overscroll-behavior: contain;
         scrollbar-width: thin;
       }
+
+      html:not(.ato-apk-portrait) #appShell .grid > .stack {
+        align-self: stretch;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+      }
+
+      html:not(.ato-apk-portrait) #appShell .grid > .stack > .date-track-panel {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      html:not(.ato-apk-portrait) #appShell .date-track-panel > .panel-head {
+        flex: 0 0 auto;
+      }
+
+      html:not(.ato-apk-portrait) #appShell .date-track-panel > .date-track-list {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        overscroll-behavior: contain;
+      }
+    }
+
+    .dashboard-navigation .dashboard-tools-trigger {
+      min-height: 36px;
+      padding-inline: 16px;
+    }
+
+    .dashboard-tools-drawer {
+      position: fixed;
+      inset: 0 0 0 auto;
+      width: min(440px, 92vw);
+      height: 100%;
+      max-width: none;
+      max-height: none;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-left: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--ink);
+      overflow: hidden;
+    }
+
+    .dashboard-tools-drawer[open] {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dashboard-tools-drawer::backdrop {
+      background: rgba(20, 14, 8, 0.35);
+    }
+
+    .dashboard-tools-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dashboard-tools-head h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .dashboard-tools-head button {
+      min-width: 44px;
+      min-height: 40px;
+      font-size: 20px;
+    }
+
+    .dashboard-tools-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      display: grid;
+      align-content: start;
+      gap: 16px;
+      padding: 16px;
     }
   </style>
   <link rel="stylesheet" href="./api/dashboard.css?v=20261114-theatre-nav">
@@ -6705,9 +6808,10 @@
         updateDashboardTitanXTrack();
         // 私人版：通知已经打开的地图页（以及别的主控台）重新读取地图。以前只写存档不通知，
         // 地图标签页要刷新才看得到阿尔戈号的新位置。带上本页 pageId，本页自己的监听会忽略它。
-        structureTechMapSyncChannel?.postMessage({
+        const mapSyncChannel = typeof structureTechMapSyncChannel === "undefined" ? null : structureTechMapSyncChannel;
+        mapSyncChannel?.postMessage({
           source: "map-command",
-          pageId: dashboardPageId,
+          pageId: typeof dashboardPageId === "undefined" ? "" : dashboardPageId,
           revision: commandState.revision,
           profileId: commandState.profileId,
         });
@@ -8854,16 +8958,63 @@
       });
     }
 
-    // 私人版：宽屏两栏始终各自滚动。栏的最大高度 = 屏幕高度 − 栏顶在屏幕上的位置 − 底部留白，
-    // 标题和导航还露在上面时栏短一些，整页滚上去后栏随之变高，底部始终停在屏幕下沿。
-    function syncDashboardColumnScroll() {
-      const grid = document.querySelector("#appShell .grid");
-      if (!grid) return;
-      const rect = grid.getBoundingClientRect();
-      // 登录前主控台是隐藏的，位置读数全是 0，先不算。
-      if (rect.height <= 0) return;
-      const height = document.documentElement.clientHeight - Math.max(0, rect.top) - 12;
-      grid.style.setProperty("--dashboard-column-height", `${Math.max(200, Math.round(height))}px`);
+    // 私人版：宽屏（两栏）时右栏只留日期轨，战役日志、用户与存档、杂项设置收进「工具」抽屉。
+    // 只搬动原来的节点，按钮和事件都还是原来那些。窄屏或安卓竖屏时放回右栏；
+    // 竖屏手机布局会把其中几块再搬进它自己的工具面板，所以只动仍在预期位置的节点。
+    function setupDashboardToolsDrawer() {
+      const app = document.getElementById("appShell");
+      const stack = app?.querySelector(".grid > .stack");
+      const nav = app?.querySelector(".dashboard-navigation");
+      if (!stack || !nav || typeof window.matchMedia !== "function") return;
+      const panels = [...stack.children].filter((node) => node.matches("section.panel") && !node.classList.contains("date-track-panel"));
+      if (!panels.length) return;
+
+      const trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.className = "secondary dashboard-tools-trigger";
+      trigger.textContent = "工具";
+      trigger.setAttribute("aria-haspopup", "dialog");
+      trigger.setAttribute("data-dashboard-readonly-allowed", "");
+      trigger.hidden = true;
+      nav.appendChild(trigger);
+
+      const dialog = document.createElement("dialog");
+      dialog.className = "dashboard-tools-drawer";
+      dialog.setAttribute("aria-label", "工具");
+      dialog.innerHTML = '<div class="dashboard-tools-head"><h2>工具</h2>'
+        + '<button type="button" class="secondary" data-dashboard-readonly-allowed aria-label="关闭">×</button></div>'
+        + '<div class="dashboard-tools-body"></div>';
+      app.appendChild(dialog);
+      const body = dialog.querySelector(".dashboard-tools-body");
+      const close = () => { if (dialog.open) dialog.close(); };
+      dialog.querySelector(".dashboard-tools-head button").addEventListener("click", close);
+      // 点抽屉外面的阴影处也关闭
+      dialog.addEventListener("click", (event) => { if (event.target === dialog) close(); });
+      trigger.addEventListener("click", () => {
+        if (dialog.open) return;
+        if (typeof dialog.showModal === "function") dialog.showModal(); else dialog.setAttribute("open", "");
+      });
+      document.getElementById("logoutButton")?.addEventListener("click", close, true);
+
+      const wide = window.matchMedia("(min-width: 1041px)");
+      let collapsed = false;
+      const apply = () => {
+        const want = wide.matches && !document.documentElement.classList.contains("ato-apk-portrait");
+        if (want === collapsed) return;
+        collapsed = want;
+        if (want) {
+          panels.forEach((panel) => { if (panel.parentElement === stack) body.appendChild(panel); });
+        } else {
+          close();
+          panels.forEach((panel) => { if (panel.parentElement === body) stack.appendChild(panel); });
+        }
+        trigger.hidden = !want;
+      };
+      if (typeof wide.addEventListener === "function") wide.addEventListener("change", apply);
+      else wide.addListener?.(apply);
+      new MutationObserver(apply).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+      new MutationObserver(() => { if (app.hidden) close(); }).observe(app, { attributes: true, attributeFilter: ["hidden"] });
+      apply();
     }
 
     function createMapStepStatus(stepId) {
@@ -14698,11 +14849,7 @@
     elements.resetTodayButton.addEventListener("click", resetToday);
     elements.nextDayButton.addEventListener("click", nextDay);
     elements.previousDayButton.addEventListener("click", previousDay);
-    window.addEventListener("scroll", syncDashboardColumnScroll, { passive: true });
-    window.addEventListener("resize", syncDashboardColumnScroll);
-    // 主控台从隐藏变成显示（登录后）、或内容变高变矮时，也要重新判断一次。
-    if (window.ResizeObserver) new ResizeObserver(syncDashboardColumnScroll).observe(document.querySelector("#appShell .grid"));
-    syncDashboardColumnScroll();
+    setupDashboardToolsDrawer();
     elements.acclimationReminderButton.addEventListener("click", () => {
       if (elements.acclimationReminderButton.disabled) return;
       const rule = getAcclimationRule(state.day, currentCycleConfig().id);
