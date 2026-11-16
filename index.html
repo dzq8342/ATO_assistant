@@ -2593,6 +2593,11 @@
         width: 100%;
       }
     }
+    /* 私人版：主控台顶部空白由 40px 减到 12px。 */
+    html:not(.ato-apk-portrait) #appShell.app {
+      padding-top: 12px;
+    }
+
     /* 私人版：导航栏（阿尔戈号…幻忆剧场那一行）上移，紧贴在天数卡（进入下一天）下方。 */
     #appShell .topbar {
       margin-bottom: 0;
