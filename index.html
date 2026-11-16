@@ -2633,6 +2633,11 @@
         flex: 0 0 auto;
       }
 
+      /* 今日流程和日期轨往上顶到导航栏下沿，栏高随之增加。 */
+      html:not(.ato-apk-portrait) #appShell .dashboard-navigation {
+        margin-bottom: 0;
+      }
+
       html:not(.ato-apk-portrait) #appShell.app > .grid {
         flex: 1 1 auto;
         min-height: 0;
