@@ -62,6 +62,12 @@ function harness(cycle, label) {
     cardTrackCard: (def, track) => (track.position > 0 ? card : null),
     activeStoryDoomData: () => ({}),
     getCurrentSurveyConstantData: () => surveyConstantData[cycle],
+    // 私人版：分支卡里会挂上「寄放」在这张卡的主线记录（如 C1 的 0014 放进宿命的迷境卡）。
+    // 这里只测标题括号，没有主线记录可挂。
+    currentMainStoryConstants: () => null,
+    ensureTodayMainStoryConstants: () => ({}),
+    createSimpleConstantRow: () => element(),
+    setMainStoryConstant() {},
     saveState() {},
     renderFlow() {},
   });
@@ -116,7 +122,10 @@ test('故事卡未开始、或这一格在总表里是空的，就不写括号',
 test('R&R 卡不套总表点数，也不因为取不到故事卡而报错', () => {
   const c = harness('c1', '1A');
   const card = c.createSurveyConstantCard({ id: '1', title: 'Catch of the Day', boxes: [] }, 'rr');
-  assert.equal(card.children[0].innerHTML, 'Catch of the Day');
+  // 私人版：休整冒险卡的标题和行内名称重复，卡里只放各行，不再单独放标题。
+  assert.equal(card.children.length, 1);
+  assert.equal(card.children[0].className, 'survey-constant-boxes');
+  assert.ok(!card.children.some((node) => node.innerHTML.includes('(')), '休整冒险卡不写点数括号');
 });
 
 test('总表每一列都是完整的 1-10 点数表', () => {
