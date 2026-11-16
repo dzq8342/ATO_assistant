@@ -1061,7 +1061,7 @@ button.gear-group-name:hover {
 <link rel="stylesheet" href="../api/cycle-theme.css">
 <link rel="stylesheet" href="../assets/theme.css?v=20261001">
 <link rel="stylesheet" href="editorial.css?v=20261001-cycle-menu">
-<link rel="stylesheet" href="tech-tree.css?v=20261002-content-paper">
+<link rel="stylesheet" href="tech-tree.css?v=20261116-pinch-zoom">
 <link rel="stylesheet" href="arsenal.css?v=20261002-centered-buttons">
 <link rel="stylesheet" href="../assets/card-art.css?v=20261017-corners1">
 <script src="../assets/card-art.js?v=20261017-corners1" defer></script>
@@ -4580,7 +4580,7 @@ function renderTree(options = {}) {
   mainView.innerHTML = `<section class="tech-explorer" aria-label="${esc(page.label)}科技树">
     <div class="tech-board-toolbar">
       <div class="tech-progress"><span>已发现 <strong>${discovered.length}</strong> / ${page.nodes.length}</span><span>已解锁 <strong>${unlockedCount}</strong></span><span>可解锁 <strong>${readyCount}</strong></span></div>
-      <div class="tech-board-controls"><button type="button" data-tree-control="out" aria-label="缩小科技树">−</button><span class="tech-zoom-value" id="techZoomValue">100%</span><button type="button" data-tree-control="in" aria-label="放大科技树">＋</button><button type="button" data-tree-control="reset">100%</button><button type="button" data-tree-control="fit">总览</button><button type="button" data-tree-control="ready">定位可解锁</button></div>
+      <div class="tech-board-controls"><button type="button" data-tree-control="reset">100%</button><button type="button" data-tree-control="fit">总览</button><button type="button" data-tree-control="ready">定位可解锁</button></div>
     </div>
     <div class="tech-board" id="techBoard" tabindex="0" aria-label="科技树，可缩放">
       <div class="tech-board-size" id="techBoardSize"><div class="tree-wrap tech-canvas" id="treeWrap" style="width:${layout.width}px;height:${layout.height}px">
@@ -4683,7 +4683,8 @@ function setTreeZoom(value, keepCenter = true) {
   if (!board || !canvas || !treeViewState) return;
   const previous = treeViewState.zoom;
   const bounds = treeViewState.bounds;
-  const zoom = Math.max(.1, Math.min(1.5, value));
+  // 私人版：手势缩放可以放得更大一些，方便看清小字（原来最大 150%）。
+  const zoom = Math.max(.1, Math.min(2.5, value));
   const centerX = (board.scrollLeft + board.clientWidth / 2 - (parseFloat(canvas.style.left) || 0)) / previous;
   const centerY = (board.scrollTop + board.clientHeight / 2 - (parseFloat(canvas.style.top) || 0)) / previous;
   treeViewState.zoom = zoom;
@@ -4695,7 +4696,8 @@ function setTreeZoom(value, keepCenter = true) {
   const size = document.getElementById('techBoardSize');
   size.style.width = Math.max(board.clientWidth, bounds.width * zoom) + 'px';
   size.style.height = Math.max(board.clientHeight, bounds.height * zoom) + 'px';
-  document.getElementById('techZoomValue').textContent = Math.round(zoom * 100) + '%';
+  const zoomValue = document.getElementById('techZoomValue');
+  if (zoomValue) zoomValue.textContent = Math.round(zoom * 100) + '%';
   if (keepCenter) {
     board.scrollTo(centerX * zoom + offsetX - board.clientWidth / 2, centerY * zoom + offsetY - board.clientHeight / 2);
   }
@@ -4730,6 +4732,7 @@ function attachTreeControls() {
       if (node) { selectedNodeId = node.id; setTreeZoom(1); focusTreeNode(node.id); updateTreeLinkHighlights(); document.querySelectorAll('.tech-module').forEach(el => el.classList.toggle('active', el.dataset.nodeId === node.id)); }
     }
   }));
+  attachTreePinchZoom(board);
   let drag = null;
   board.addEventListener('pointerdown', event => {
     if (event.button !== 0 || event.pointerType === 'touch' || event.target.closest('.tech-module')) return;
@@ -4746,6 +4749,58 @@ function attachTreeControls() {
   board.addEventListener('pointerup', stopDrag);
   board.addEventListener('pointercancel', stopDrag);
   board.addEventListener('lostpointercapture', stopDrag);
+}
+// 私人版：右侧科技树手势缩放，替代原来左下角的「−  百分比  ＋」。
+// 双指捏合以两指中点为中心缩放、两指一起移动时跟着平移；电脑上 Ctrl+滚轮以鼠标位置为中心缩放。
+// 单指拖动仍由浏览器负责滚动。
+function zoomTreeAt(next, fx, fy) {
+  const board = document.getElementById('techBoard');
+  const canvas = document.getElementById('treeWrap');
+  if (!board || !canvas || !treeViewState) return;
+  const previous = treeViewState.zoom;
+  const contentX = (board.scrollLeft + fx - (parseFloat(canvas.style.left) || 0)) / previous;
+  const contentY = (board.scrollTop + fy - (parseFloat(canvas.style.top) || 0)) / previous;
+  treeViewState.autoFit = false;
+  setTreeZoom(next, false);
+  const zoom = treeViewState.zoom;
+  board.scrollLeft = contentX * zoom + (parseFloat(canvas.style.left) || 0) - fx;
+  board.scrollTop = contentY * zoom + (parseFloat(canvas.style.top) || 0) - fy;
+}
+function attachTreePinchZoom(board) {
+  let pinch = null;
+  const touchPoint = (touches) => {
+    const rect = board.getBoundingClientRect();
+    const [a, b] = touches;
+    return {
+      dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1,
+      x: (a.clientX + b.clientX) / 2 - rect.left,
+      y: (a.clientY + b.clientY) / 2 - rect.top,
+    };
+  };
+  board.addEventListener('touchstart', event => {
+    if (event.touches.length !== 2 || !treeViewState) return;
+    const point = touchPoint(event.touches);
+    pinch = { dist: point.dist, zoom: treeViewState.zoom, x: point.x, y: point.y };
+  }, { passive: true });
+  board.addEventListener('touchmove', event => {
+    if (!pinch || event.touches.length !== 2) return;
+    event.preventDefault();
+    const point = touchPoint(event.touches);
+    board.scrollLeft -= point.x - pinch.x;
+    board.scrollTop -= point.y - pinch.y;
+    pinch.x = point.x;
+    pinch.y = point.y;
+    zoomTreeAt(pinch.zoom * point.dist / pinch.dist, point.x, point.y);
+  }, { passive: false });
+  const endPinch = event => { if (pinch && event.touches.length < 2) pinch = null; };
+  board.addEventListener('touchend', endPinch, { passive: true });
+  board.addEventListener('touchcancel', endPinch, { passive: true });
+  board.addEventListener('wheel', event => {
+    if (!event.ctrlKey || !treeViewState) return;
+    event.preventDefault();
+    const rect = board.getBoundingClientRect();
+    zoomTreeAt(treeViewState.zoom * (event.deltaY < 0 ? 1.1 : 1 / 1.1), event.clientX - rect.left, event.clientY - rect.top);
+  }, { passive: false });
 }
 function conditionCellDisplayText(pageKey, node, index) {
   const caption = conditionCellCaption(pageKey, node, index);

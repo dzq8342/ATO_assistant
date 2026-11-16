@@ -122,3 +122,8 @@ body[data-theme-module="technology"] .tree-wrap.tech-canvas { position: absolute
     overflow-y: auto;
   }
 }
+
+/* 私人版：科技树用双指缩放（脚本见 attachTreePinchZoom），单指照常拖动滚动；
+   不让浏览器把双指当成整页缩放。 */
+#techBoard { touch-action: pan-x pan-y; }
+
