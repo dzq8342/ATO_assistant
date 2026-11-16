@@ -1557,6 +1557,13 @@
     @media (min-width: 981px) {
       html:not(.ato-apk-portrait) .topbar {
         align-items: center;
+        /* 「已同步」下方的空白缩小：分隔线上下各由 24px 减到 8px / 12px */
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+      }
+
+      html:not(.ato-apk-portrait) .topbar > div > .save-status {
+        margin-top: 4px;
       }
 
       html:not(.ato-apk-portrait) .topbar-tools {
