@@ -1007,6 +1007,13 @@
       html:not(.ato-apk-portrait) .topbar {
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
+        /* 「已同步」下方的空白和记录表一样缩小：分隔线上下各由 24px 减到 8px / 12px */
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+      }
+
+      html:not(.ato-apk-portrait) .topbar > div > .save-status {
+        margin-top: 4px;
       }
 
       html:not(.ato-apk-portrait) .topbar-tools {
