@@ -184,6 +184,18 @@ function user_campaign_file(string $dataDir, string $userId): string {
   return $dataDir . DIRECTORY_SEPARATOR . 'ato-campaign-' . $userId . '.json';
 }
 
+// 私人版：第二屏显示科技树时，主机正在看哪一页科技树、打开了哪张科技大图。
+// page 是科技页的循环键（c1、c1.5 这类短串），nodeId 是科技树节点 id；空串表示没打开大图。
+function normalize_technology_view($value): array {
+  $view = ['page' => '', 'nodeId' => ''];
+  if (!is_array($value)) return $view;
+  $page = is_string($value['page'] ?? null) ? trim($value['page']) : '';
+  $nodeId = is_string($value['nodeId'] ?? null) ? trim($value['nodeId']) : '';
+  if (preg_match('/^[A-Za-z0-9._-]{1,24}$/', $page) === 1) $view['page'] = $page;
+  if (strlen($nodeId) <= 160 && preg_match('/^[^\x00-\x1f<>"]*$/u', $nodeId) === 1) $view['nodeId'] = $nodeId;
+  return $view;
+}
+
 function read_second_screens(string $file): array {
   $store = read_json_file($file, ['version' => 1, 'screens' => []]);
   $store['screens'] = is_array($store['screens'] ?? null) ? $store['screens'] : [];
@@ -317,6 +329,14 @@ function public_second_screen_payload(array $campaign, array $screenEntry = []):
   }
   $storyState = is_array($storyState) ? $storyState : [];
 
+  $technologySection = $campaign['sections']['technology'] ?? null;
+  if (is_array($technologySection['users'] ?? null)) {
+    $technologyState = $technologySection['users'][$profileId] ?? null;
+  } else {
+    $technologyState = $technologySection;
+  }
+  $technologyState = is_array($technologyState) ? $technologyState : [];
+
   $legacyScale = max(60, min(200, (int) ($screenEntry['displayScale'] ?? 100)));
   $savedScales = is_array($screenEntry['displayScales'] ?? null) ? $screenEntry['displayScales'] : [];
   $displayScales = [
@@ -343,12 +363,15 @@ function public_second_screen_payload(array $campaign, array $screenEntry = []):
     ],
     'aibp' => $aibpState,
     'story' => $storyState,
+    'technology' => $technologyState,
+    'technologyView' => normalize_technology_view($screenEntry['technologyView'] ?? null),
     'displayMode' => (string) ($screenEntry['displayMode'] ?? 'map'),
     // 第二屏那台设备靠这个字段跟主控台的外观保持一致（见 normalize_theme_setting）。
     'theme' => second_screen_theme($screenEntry),
     'mapRevision' => (int) ($campaign['sectionRevisions']['map'] ?? 0),
     'aibpRevision' => (int) ($campaign['sectionRevisions']['aibp'] ?? 0),
     'storyRevision' => (int) ($campaign['sectionRevisions']['story'] ?? 0),
+    'technologyRevision' => (int) ($campaign['sectionRevisions']['technology'] ?? 0),
     'dashboardRevision' => (int) ($campaign['sectionRevisions']['dashboard'] ?? 0),
     'updatedAt' => $campaign['updatedAt'] ?? null,
     'displayScales' => $displayScales,
@@ -869,7 +892,7 @@ if ($action === 'second-screen-status') {
       $battleBoardVisible = !array_key_exists('battleBoardVisible', $entry) || !empty($entry['battleBoardVisible']);
       $theme = second_screen_theme($entry);
       $requestedMode = (string) ($entry['displayMode'] ?? 'map');
-      $displayMode = in_array($requestedMode, ['aibp', 'story', 'blank'], true) ? $requestedMode : 'map';
+      $displayMode = in_array($requestedMode, ['aibp', 'story', 'blank', 'technology'], true) ? $requestedMode : 'map';
       break;
     }
   }
@@ -955,7 +978,9 @@ if ($action === 'second-screen-mode') {
   $payload = json_decode((string) $raw, true);
   if (!is_array($payload)) respond(400, ['ok' => false, 'error' => 'Request body must be JSON.']);
   $mode = strtolower(trim((string) ($payload['mode'] ?? '')));
-  $mode = in_array($mode, ['aibp', 'story', 'blank'], true) ? $mode : 'map';
+  $mode = in_array($mode, ['aibp', 'story', 'blank', 'technology'], true) ? $mode : 'map';
+  // 私人版：科技页随模式一起报告当前看的科技树和打开的大图；没带这个字段就保持原值。
+  $technologyView = array_key_exists('technologyView', $payload) ? normalize_technology_view($payload['technologyView']) : null;
 
   $lockHandle = fopen($secondScreensFile . '.lock', 'c');
   if (!$lockHandle || !flock($lockHandle, LOCK_EX)) {
@@ -976,6 +1001,10 @@ if ($action === 'second-screen-mode') {
       $store['screens'][$token]['displayMode'] = $mode;
       $store['screens'][$token]['modeChangedAt'] = gmdate('c');
       unset($store['screens'][$token]['focusedModule'], $store['screens'][$token]['focusedAt']);
+      $changed = true;
+    }
+    if ($technologyView !== null && normalize_technology_view($entry['technologyView'] ?? null) !== $technologyView) {
+      $store['screens'][$token]['technologyView'] = $technologyView;
       $changed = true;
     }
     // The AIBP mode is the battle-board view. Keep the legacy board-visibility

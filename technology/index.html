@@ -1061,7 +1061,7 @@ button.gear-group-name:hover {
 <link rel="stylesheet" href="../api/cycle-theme.css">
 <link rel="stylesheet" href="../assets/theme.css?v=20261001">
 <link rel="stylesheet" href="editorial.css?v=20261001-cycle-menu">
-<link rel="stylesheet" href="tech-tree.css?v=20261116-pinch-zoom">
+<link rel="stylesheet" href="tech-tree.css?v=20261122-second-screen1">
 <link rel="stylesheet" href="arsenal.css?v=20261118-ascend-core1">
 <link rel="stylesheet" href="../assets/card-art.css?v=20261017-corners1">
 <script src="../assets/card-art.js?v=20261017-corners1" defer></script>
@@ -1144,6 +1144,9 @@ button.gear-group-name:hover {
 <script src="arsenal-loadout.js?v=20261118-save-all-loadouts1"></script>
 <script>
 const TECH_DICTIONARY_URL = 'tech_card_dictionary.min.json';
+// 私人版：technology/index.html?second=1 是第二屏里内嵌的只读科技树（见 ss/app.js 的
+// openTechnology）。这种模式下不读写存档，数据全由第二屏页面转过来。
+const TECH_SECOND_SCREEN = new URLSearchParams(window.location.search).get('second') === '1';
 const fetch = window.ATO_CAMPAIGN_NOTES.createFetch(window.fetch.bind(window), {
   source: '科技',
   context: () => ({ profileId: activeAccountId, cycleId: requestedMainCycleId() }),
@@ -1590,7 +1593,7 @@ async function readLatestRecordState() {
   return recordStateFromCampaign(payload.campaign || {});
 }
 async function loadGearRecordState() {
-  if (gearRecordLoadInFlight) return;
+  if ((typeof TECH_SECOND_SCREEN !== 'undefined' && TECH_SECOND_SCREEN) || gearRecordLoadInFlight) return;
   gearRecordLoadInFlight = true;
   gearRecordError = '';
   const profileId = activeAccountId;
@@ -1922,6 +1925,7 @@ function findGearTechCard(techId) {
     || cards.find(card => String(card.key || '').trim().toLowerCase().startsWith(normalized + '@@'))
     || null;
 }
+var activeModalCardKey = '';
 function showGearTechCard(techId) {
   const card = findGearTechCard(techId);
   if (!card) {
@@ -1930,6 +1934,7 @@ function showGearTechCard(techId) {
   }
   activeUnlockedRecord = null;
   activeModalMode = 'gear-production';
+  activeModalCardKey = card.key || '';
   unlockedModalTitle.textContent = card.names?.zh || card.names?.en || card.key || getTechDisplayName(techId);
   unlockedModalMeta.textContent = `${card.category === 'battle' ? '战斗科技' : '结构科技'} · ${card.key}`;
   modalTechLinks.innerHTML = '';
@@ -1939,6 +1944,7 @@ function showGearTechCard(techId) {
   modalToggleUnimportant.classList.add('hidden');
   unlockedModal.classList.add('open');
   unlockedModal.setAttribute('aria-hidden', 'false');
+  if (typeof pushTechnologySecondScreenView === 'function') void pushTechnologySecondScreenView();
 }
 function gearFilterBarHtml(visibleCount, totalCount) {
   return `<div class="gear-filter-bar">
@@ -3708,6 +3714,7 @@ function setCampaignSaveStatus(message, status = 'saved') {
   campaignSaveStatus.dataset.state = status;
 }
 function scheduleCampaignReconnect() {
+  if (typeof TECH_SECOND_SCREEN !== 'undefined' && TECH_SECOND_SCREEN) return;
   if (campaignSession.changed || campaignTechConflict) return;
   if (campaignReconnectTimer || campaignReconnectInFlight || campaignStorageAvailable) return;
   const wait = campaignReconnectDelay;
@@ -3742,6 +3749,7 @@ async function probeCampaignReconnect() {
   }
 }
 function reconnectCampaignNow() {
+  if (typeof TECH_SECOND_SCREEN !== 'undefined' && TECH_SECOND_SCREEN) return;
   if (campaignStorageAvailable || campaignReconnectInFlight) return;
   window.clearTimeout(campaignReconnectTimer);
   campaignReconnectTimer = null;
@@ -4340,6 +4348,7 @@ function applyTechnologyAccountState(state) {
   refreshUnlockState();
 }
 async function loadCampaignTechnologySection() {
+  if (typeof TECH_SECOND_SCREEN !== 'undefined' && TECH_SECOND_SCREEN) return;
   setCampaignSaveStatus('正在连接', 'saving');
   try {
     const response = await fetch(CAMPAIGN_STORAGE_URL, { cache: 'no-store' });
@@ -4374,6 +4383,7 @@ async function loadCampaignTechnologySection() {
   }
 }
 function queueCampaignTechnologySave() {
+  if (typeof TECH_SECOND_SCREEN !== 'undefined' && TECH_SECOND_SCREEN) return;
   if (campaignSession.changed || campaignTechConflict) {
     setCampaignSaveStatus('保存已暂停，请刷新页面确认当前存档', 'conflict');
     return;
@@ -4389,6 +4399,7 @@ function queueCampaignTechnologySave() {
   campaignSaveTimer = setTimeout(() => void saveCampaignTechnologySection(), 260);
 }
 async function saveCampaignTechnologySection() {
+  if (typeof TECH_SECOND_SCREEN !== 'undefined' && TECH_SECOND_SCREEN) return false;
   if (campaignSession.changed || campaignTechConflict) return false;
   if (!campaignStorageAvailable) {
     campaignSaveQueuedBeforeReady = true;
@@ -4463,6 +4474,7 @@ async function saveCampaignTechnologySection() {
   }
 }
 async function flushCampaignTechnologySave() {
+  if (typeof TECH_SECOND_SCREEN !== 'undefined' && TECH_SECOND_SCREEN) return false;
   if (campaignSession.changed || campaignTechConflict) return false;
   if (!campaignStorageAvailable) {
     campaignSaveQueuedBeforeReady = true;
@@ -4555,6 +4567,7 @@ function unlockedTechSnapshot() {
   };
 }
 async function writeSnapshotToMainArchive(snapshot, targetCycleId = requestedMainCycleId()) {
+  if (typeof TECH_SECOND_SCREEN !== 'undefined' && TECH_SECOND_SCREEN) return;
   const cycleId = targetCycleId;
   await mutateCampaignDashboardArchive((current) => {
     let archive = current;
@@ -4840,6 +4853,7 @@ function showUnlockedModal(pageKey, nodeId) {
   if (!page || !node || !card) return;
   activeUnlockedRecord = { page, node, card };
   activeModalMode = 'unlocked';
+  activeModalCardKey = '';
   unlockedModalTitle.textContent = displayTechReferenceName(node);
   const lock = explorationTechLock(page.key, node);
   unlockedModalMeta.textContent = `${page.label} · ${technologyMetaLabel(page.key, node)}${lock ? ` · ${lock.displayLabel}` : ''}`;
@@ -4851,6 +4865,7 @@ function showUnlockedModal(pageKey, nodeId) {
   modalToggleUnimportant.textContent = isUnimportantNode(page.key, node) ? '移出不重要' : '设置为不重要';
   unlockedModal.classList.add('open');
   unlockedModal.setAttribute('aria-hidden', 'false');
+  if (typeof pushTechnologySecondScreenView === 'function') void pushTechnologySecondScreenView();
   if (typeof renderStructureTechActions === 'function') void renderStructureTechActions(page, node);
 }
 function showNodeModal(node) {
@@ -4863,6 +4878,7 @@ function showNodeModal(node) {
   updateTreeLinkHighlights();
   activeUnlockedRecord = { page, node, card: cards[0] || null };
   activeModalMode = 'tree';
+  activeModalCardKey = '';
   unlockedModalTitle.textContent = displayTechName(node);
   const lock = explorationTechLock(page.key, node);
   unlockedModalMeta.textContent = `${page?.label || ''} · ${technologyMetaLabel(page.key, node)}${lock ? ` · ${lock.displayLabel}` : ''}`;
@@ -4876,6 +4892,7 @@ function showNodeModal(node) {
   updateModalUnlockButton(page.key, node);
   unlockedModal.classList.add('open');
   unlockedModal.setAttribute('aria-hidden', 'false');
+  if (typeof pushTechnologySecondScreenView === 'function') void pushTechnologySecondScreenView();
   if (typeof renderStructureTechActions === 'function') void renderStructureTechActions(page, node);
 }
 let structureTechActionClient = null;
@@ -4954,8 +4971,10 @@ function updateModalUnlockButton(pageKey, node) {
 function closeUnlockedModal() {
   activeUnlockedRecord = null;
   activeModalMode = null;
+  activeModalCardKey = '';
   unlockedModal.classList.remove('open');
   unlockedModal.setAttribute('aria-hidden', 'true');
+  if (typeof pushTechnologySecondScreenView === 'function') void pushTechnologySecondScreenView();
 }
 function toggleUnimportantForActive() {
   if (!activeUnlockedRecord) return;
@@ -5080,6 +5099,7 @@ function renderCard(card, node) {
   </section>`;
 }
 function renderTabs(remember = false) {
+  if (typeof pushTechnologySecondScreenView === 'function') void pushTechnologySecondScreenView();
   if (remember) {
     lastTechnologyTab = currentTab;
     try {
@@ -5630,7 +5650,193 @@ function boot(appData) {
   renderCycleButton();
   renderTabs();
   refreshUnlockState();
-  loadCampaignTechnologySection();
+  if (typeof TECH_SECOND_SCREEN !== 'undefined' && TECH_SECOND_SCREEN) startTechnologySecondScreenView();
+  else {
+    loadCampaignTechnologySection();
+    if (typeof claimTechnologySecondScreen === 'function') void claimTechnologySecondScreen();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 私人版：科技模块的第二屏。
+// 主机这边：科技标签页显示在前台时，让第二屏显示科技树，并把正在看的那一页、打开的
+// 大图（科技卡详情）同步过去；离开科技标签页（安卓切到别的标签、浏览器切走或关闭）时，
+// 把第二屏还原成进科技页之前的画面。第二屏没开启时什么都不做。
+// 第二屏那边（?second=1）：由 ss/app.js 每次轮询把科技存档和主机的画面转过来，
+// 这里只负责照着显示，不读写存档；打开大图时全屏显示这张科技卡。
+const TECH_SECOND_SCREEN_MODE_URL = `${CAMPAIGN_STORAGE_URL}?action=second-screen-mode`;
+const TECH_SECOND_SCREEN_STATUS_URL = `${CAMPAIGN_STORAGE_URL}?action=second-screen-status`;
+var techSecondScreenOwned = false;
+var techSecondScreenPrevious = 'map';
+var techSecondScreenClaiming = false;
+var techSecondScreenLastSent = '';
+function technologySecondScreenView() {
+  const modalOpen = unlockedModal.classList.contains('open');
+  if (modalOpen && activeModalCardKey) return { page: validPageKey(viewPage) || '', nodeId: `card:${activeModalCardKey}` };
+  if (modalOpen && activeUnlockedRecord?.node) {
+    return { page: activeUnlockedRecord.page?.key || validPageKey(viewPage) || '', nodeId: String(activeUnlockedRecord.node.id || '') };
+  }
+  return { page: validPageKey(viewPage) || '', nodeId: '' };
+}
+async function claimTechnologySecondScreen() {
+  if (TECH_SECOND_SCREEN || techSecondScreenClaiming || document.hidden || !data) return;
+  techSecondScreenClaiming = true;
+  try {
+    const response = await fetch(TECH_SECOND_SCREEN_STATUS_URL, { cache: 'no-store' });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok || !payload.enabled || document.hidden) return;
+    if (!techSecondScreenOwned) {
+      const mode = String(payload.displayMode || 'map');
+      techSecondScreenPrevious = ['map', 'aibp', 'story', 'blank'].includes(mode) ? mode : 'map';
+    }
+    techSecondScreenOwned = true;
+    techSecondScreenLastSent = '';
+    await pushTechnologySecondScreenView();
+  } catch {
+    /* 第二屏没开启或网络异常时保持原样 */
+  } finally {
+    techSecondScreenClaiming = false;
+  }
+}
+async function pushTechnologySecondScreenView() {
+  if (TECH_SECOND_SCREEN || !techSecondScreenOwned || !data) return;
+  const view = technologySecondScreenView();
+  const key = JSON.stringify(view);
+  if (key === techSecondScreenLastSent) return;
+  techSecondScreenLastSent = key;
+  try {
+    const response = await fetch(TECH_SECOND_SCREEN_MODE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'technology', technologyView: view }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  } catch {
+    if (techSecondScreenLastSent === key) techSecondScreenLastSent = '';
+  }
+}
+function releaseTechnologySecondScreen() {
+  if (TECH_SECOND_SCREEN || !techSecondScreenOwned) return;
+  techSecondScreenOwned = false;
+  techSecondScreenLastSent = '';
+  try {
+    // keepalive：页面正在关闭或跳转时请求也能发出去。
+    fetch(TECH_SECOND_SCREEN_MODE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: techSecondScreenPrevious, technologyView: { page: '', nodeId: '' } }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    /* ignore */
+  }
+}
+if (!TECH_SECOND_SCREEN) {
+  // 安卓 App 点顶部标签切到科技页时会发 ato-module-sync-request，切走时发 ato-module-hidden。
+  window.addEventListener('ato-module-sync-request', () => void claimTechnologySecondScreen());
+  window.addEventListener('ato-module-hidden', releaseTechnologySecondScreen);
+  window.addEventListener('pagehide', releaseTechnologySecondScreen);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) releaseTechnologySecondScreen();
+    else void claimTechnologySecondScreen();
+  });
+}
+
+var techSecondScreenDataKey = '';
+var techSecondScreenNodeKey = '';
+function startTechnologySecondScreenView() {
+  document.body.classList.add('tech-second-screen');
+  window.addEventListener('message', (event) => {
+    if (event.origin !== window.location.origin || event.source !== window.parent) return;
+    if (event.data?.type !== 'ato-second-screen-technology') return;
+    applyTechnologySecondScreen(event.data.screen || {});
+  });
+  window.addEventListener('resize', fitTechnologySecondScreenCard);
+  window.parent?.postMessage({ type: 'ato-second-screen-technology-ready' }, window.location.origin);
+}
+function applyTechnologySecondScreen(screen) {
+  const technology = isPlainObject(screen.technology) ? screen.technology : {};
+  const view = isPlainObject(screen.technologyView) ? screen.technologyView : {};
+  const dataKey = JSON.stringify([screen.technologyRevision || 0, technology, screen.cycleId || '']);
+  if (dataKey !== techSecondScreenDataKey) {
+    techSecondScreenDataKey = dataKey;
+    const campaign = { sections: {
+      dashboard: { activeProfileId: 'second-screen', profiles: { 'second-screen': { name: screen.profileName || '', activeCycleId: screen.cycleId || '' } } },
+      technology: { users: { 'second-screen': technology } },
+    } };
+    try { applyCampaignUsersToTechnology(campaign, 'second-screen'); } catch (error) { console.warn(error); }
+  }
+  const page = validPageKey(view.page) || viewPage;
+  if (page && (currentTab !== page || viewPage !== page)) {
+    viewPage = page;
+    currentTab = page;
+    selectedNodeId = null;
+    treeViewState && (treeViewState.autoFit = true);
+    renderTabs();
+    renderTree();
+  }
+  const nodeKey = `${page}|${view.nodeId || ''}`;
+  if (nodeKey !== techSecondScreenNodeKey) {
+    techSecondScreenNodeKey = nodeKey;
+    showTechnologySecondScreenCard(page, String(view.nodeId || ''));
+  }
+}
+function technologySecondScreenCards(pageKey, nodeId) {
+  if (!nodeId) return null;
+  if (nodeId.startsWith('card:')) {
+    const key = nodeId.slice(5);
+    const card = data.cards.find(item => item?.key === key);
+    return card ? { title: displayCardName(card, ''), cards: [card], node: null } : null;
+  }
+  const pages = [pageByKey(pageKey), ...data.pages].filter(Boolean);
+  for (const page of pages) {
+    const node = page.nodes.find(item => String(item.id) === nodeId);
+    if (!node) continue;
+    const cards = (node.card_indexes || []).map(index => data.cards[index]).filter(Boolean);
+    return { title: displayTechName(node), cards, node };
+  }
+  return null;
+}
+function showTechnologySecondScreenCard(pageKey, nodeId) {
+  let overlay = document.getElementById('techSecondScreenCard');
+  const found = technologySecondScreenCards(pageKey, nodeId);
+  if (!found || !found.cards.length) {
+    if (overlay) overlay.hidden = true;
+    return;
+  }
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'techSecondScreenCard';
+    overlay.className = 'tech-second-card';
+    overlay.innerHTML = '<div class="tech-second-card-title"></div><div class="tech-second-card-stage"><div class="tech-second-card-content"></div></div>';
+    document.body.appendChild(overlay);
+  }
+  overlay.querySelector('.tech-second-card-title').textContent = found.title || '';
+  overlay.querySelector('.tech-second-card-content').innerHTML = found.cards.map(card => {
+    const hasImage = Boolean(card.face_image_file || card.back_image_file);
+    return hasImage
+      ? `<div class="card-previews ${isLargeTechCard(card) ? 'stacked' : 'side-by-side'}">${cardPreview(card, 'front')}${cardPreview(card, 'back')}</div>`
+      : `<div class="card-image-missing">${esc(card.image_missing_reason || '图包未包含该卡牌图像')}</div>`;
+  }).join('');
+  overlay.hidden = false;
+  // 单张卡图要等图片加载完才知道大小，加载后再按实际尺寸放大一次。
+  overlay.querySelectorAll('img').forEach(img => {
+    if (!img.complete) img.addEventListener('load', fitTechnologySecondScreenCard, { once: true });
+  });
+  fitTechnologySecondScreenCard();
+}
+// 卡图按原来的尺寸排好，再整体放大到刚好占满屏幕。
+function fitTechnologySecondScreenCard() {
+  const overlay = document.getElementById('techSecondScreenCard');
+  if (!overlay || overlay.hidden) return;
+  const stage = overlay.querySelector('.tech-second-card-stage');
+  const content = overlay.querySelector('.tech-second-card-content');
+  content.style.transform = 'none';
+  const width = content.scrollWidth || 1;
+  const height = content.scrollHeight || 1;
+  // 最多放大 4 倍，免得缺图时只剩一行文字被放得满屏都是。
+  const scale = Math.max(0.2, Math.min(4, stage.clientWidth / width, stage.clientHeight / height));
+  content.style.transform = `scale(${scale})`;
 }
 
 loadDictionaryData().then(async (appData) => {

@@ -342,6 +342,8 @@ public final class MainActivity extends Activity {
   // 私人版：点顶部标签切换页面时，网页收不到 focus 事件，存档在别的标签里改过也不会重新读取
   // （例如在主控台移动阿尔戈号后切到地图，位置不变）。切换时补发各模块都在监听的同步请求，
   // 地图、记录表、英雄、科技、剧场、主控台会就地重新读取存档；没有监听的页面（如剧情书）不受影响。
+  private static final String MODULE_HIDDEN_SCRIPT =
+      "window.dispatchEvent(new CustomEvent('ato-module-hidden'))";
   private static final String MODULE_SYNC_SCRIPT =
       "window.dispatchEvent(new CustomEvent('ato-module-sync-request'))";
 
@@ -359,6 +361,8 @@ public final class MainActivity extends Activity {
         notifyStoryTtsResult(id, false, "切换页面，朗读已停止");
       }
       activeTab.view.setVisibility(View.GONE);
+      // 私人版：告诉被切走的页面它到后台了（例如科技页据此把第二屏还原成进科技页之前的画面）。
+      activeTab.view.evaluateJavascript(MODULE_HIDDEN_SCRIPT, null);
     }
     activeTab = tab;
     webView = tab.view;

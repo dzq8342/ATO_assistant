@@ -64,6 +64,8 @@ const elements = {
   damageSummary: document.querySelector("#damageSummary"),
   damageCards: document.querySelector("#damageCards"),
   unavailableView: document.querySelector("#unavailableView"),
+  technologyView: document.querySelector("#technologyView"),
+  technologyFrame: document.querySelector("#technologyFrame"),
   unavailableMessage: document.querySelector("#unavailableMessage"),
 };
 
@@ -320,6 +322,7 @@ function showUnavailable(message = "") {
   elements.mapStage.hidden = true;
   elements.storyView.hidden = true;
   elements.battleView.hidden = true;
+  if (typeof closeTechnology === 'function') closeTechnology();
 }
 
 function openBlank() {
@@ -330,6 +333,7 @@ function openBlank() {
   elements.storyView.hidden = true;
   elements.battleView.hidden = true;
   elements.mapFrame.removeAttribute("src");
+  if (typeof closeTechnology === 'function') closeTechnology();
 }
 
 function openMap() {
@@ -338,6 +342,7 @@ function openMap() {
   elements.unavailableView.hidden = true;
   elements.storyView.hidden = true;
   elements.battleView.hidden = true;
+  if (typeof closeTechnology === 'function') closeTechnology();
   elements.mapStage.hidden = false;
   if (!elements.mapFrame.getAttribute("src")) elements.mapFrame.src = "../map/index.html?second=1";
 }
@@ -432,6 +437,7 @@ function openStory(screen) {
   elements.unavailableView.hidden = true;
   elements.mapStage.hidden = true;
   elements.battleView.hidden = true;
+  if (typeof closeTechnology === 'function') closeTechnology();
   elements.storyView.hidden = false;
   // 官方版是「只看扫描图」，但该条目没有对应扫描图时必须退回正文：
   // 只按 story.imagesOnly 走图，第二屏会只剩标题、正文一片空白。
@@ -866,6 +872,7 @@ function openBattle(screen) {
   elements.unavailableView.hidden = true;
   elements.mapStage.hidden = true;
   elements.storyView.hidden = true;
+  if (typeof closeTechnology === 'function') closeTechnology();
   elements.battleView.hidden = false;
   const scale = Math.max(60, Math.min(200, Number(screen.displayScales?.battleBoard || 100)));
   const rotation = [0, 90, 180, 270].includes(Number(screen.battleRotation)) ? Number(screen.battleRotation) : 0;
@@ -967,6 +974,48 @@ function applySecondScreenTheme(screen) {
   api.set({ mode: theme.mode, rgb: theme.rgb });
 }
 
+// 私人版：主机切到科技标签页时，第二屏显示科技树。科技树由内嵌的
+// technology/index.html?second=1 渲染（只读，不读写存档）；这里每次轮询把最新的
+// 科技存档和主机正在看的那一页、打开的大图转给它（postMessage）。
+let latestTechnologyScreen = null;
+let technologyFrameReady = false;
+function postTechnologyScreen() {
+  const target = elements.technologyFrame?.contentWindow;
+  if (!target || !technologyFrameReady || !latestTechnologyScreen) return;
+  target.postMessage({ type: "ato-second-screen-technology", screen: latestTechnologyScreen }, window.location.origin);
+}
+
+function openTechnology(screen) {
+  mixedMediaRuntime()?.close?.();
+  activeMode = "technology";
+  latestTechnologyScreen = {
+    profileName: screen.profileName,
+    cycleId: screen.cycleId,
+    technology: screen.technology || {},
+    technologyView: screen.technologyView || {},
+    technologyRevision: screen.technologyRevision || 0,
+  };
+  elements.unavailableView.hidden = true;
+  elements.mapStage.hidden = true;
+  elements.storyView.hidden = true;
+  elements.battleView.hidden = true;
+  elements.mapFrame.removeAttribute("src");
+  elements.technologyView.hidden = false;
+  if (!elements.technologyFrame.getAttribute("src")) {
+    technologyFrameReady = false;
+    elements.technologyFrame.src = "../technology/index.html?second=1";
+  }
+  postTechnologyScreen();
+}
+
+// 离开科技模式时卸掉内嵌页，下次进来重新加载，避免在后台一直占着内存。
+function closeTechnology() {
+  if (!elements.technologyView) return;
+  elements.technologyView.hidden = true;
+  if (elements.technologyFrame.getAttribute("src")) elements.technologyFrame.removeAttribute("src");
+  technologyFrameReady = false;
+}
+
 async function checkConnection() {
   window.clearTimeout(retryTimer);
   try {
@@ -980,6 +1029,7 @@ async function checkConnection() {
     if (payload.screen.displayMode === "aibp") openBattle(payload.screen);
     else if (payload.screen.displayMode === "story") openStory(payload.screen);
     else if (payload.screen.displayMode === "blank") openBlank();
+    else if (payload.screen.displayMode === "technology") openTechnology(payload.screen);
     else openMap();
   } catch (error) {
     showUnavailable(String(error.message || error));
@@ -995,6 +1045,11 @@ window.addEventListener("message", (event) => {
     return;
   }
   if (event.data?.type === "ato-second-screen-updated" && activeMode === "map") openMap();
+  // 内嵌的科技页准备好接收数据了：马上把最新一份转过去，不用等下一次轮询。
+  if (event.data?.type === "ato-second-screen-technology-ready" && event.source === elements.technologyFrame?.contentWindow) {
+    technologyFrameReady = true;
+    postTechnologyScreen();
+  }
 });
 
 window.addEventListener("resize", () => {

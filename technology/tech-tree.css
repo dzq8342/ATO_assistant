@@ -127,3 +127,49 @@ body[data-theme-module="technology"] .tree-wrap.tech-canvas { position: absolute
    不让浏览器把双指当成整页缩放。 */
 #techBoard { touch-action: pan-x pan-y; }
 
+/* 私人版：第二屏里内嵌的只读科技树（technology/index.html?second=1，见 index.html 的
+   startTechnologySecondScreenView）。只留科技树铺满整屏，标题、标签、工具、进度都不显示；
+   节点不可点（只跟着主机显示），拖动和双指缩放照常可用。 */
+body.tech-second-screen { overflow: hidden; }
+body.tech-second-screen .main {
+  display: block !important;
+  height: 100vh !important; height: 100dvh !important;
+  margin: 0 !important; padding: 0 !important; max-width: none !important;
+  overflow: hidden !important;
+}
+body.tech-second-screen :is(.page-heading, .topbar, .tech-board-toolbar, .tech-discovery-message) { display: none !important; }
+body.tech-second-screen #mainView {
+  height: 100% !important; min-height: 0 !important; padding: 0 !important; overflow: hidden !important;
+}
+body.tech-second-screen .tech-explorer { height: 100%; display: flex; flex-direction: column; }
+body.tech-second-screen .tech-board { flex: 1 1 auto; height: auto !important; min-height: 0; }
+body.tech-second-screen .tech-module,
+body.tech-second-screen .tech-module * { pointer-events: none; }
+
+/* 主机打开科技大图时，第二屏全屏显示这张科技卡（正反面），整体放大到占满屏幕。 */
+.tech-second-card {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; flex-direction: column;
+  background: var(--bg, #f6f0eb);
+}
+.tech-second-card[hidden] { display: none; }
+.tech-second-card-title {
+  flex: 0 0 auto; padding: 10px 16px 0; text-align: center;
+  font: 600 22px/1.3 "Songti SC", "Noto Serif CJK SC", SimSun, Georgia, serif;
+  color: var(--accent-strong, #5f341b);
+}
+.tech-second-card-stage {
+  flex: 1 1 auto; min-height: 0; margin: 10px 16px 16px;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.tech-second-card-content {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 16px;
+  transform-origin: center center;
+}
+.tech-second-card-content .card-previews { display: flex; gap: 16px; align-items: flex-start; }
+.tech-second-card-content .card-previews.stacked { flex-direction: column; align-items: center; }
+.tech-second-card-content .preview-label { display: none; }
+.tech-second-card-content .preview-frame { width: auto; margin: 0; padding: 0; border: 0; background: transparent; overflow: visible; }
+.tech-second-card-content .card-preview-img { width: auto; max-width: none; height: 420px; }
+.tech-second-card-content .card-image-missing { min-height: 0; padding: 24px; font-size: 16px; }
+

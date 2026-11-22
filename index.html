@@ -5106,6 +5106,8 @@
           ? "已开启，当前暂无内容。"
           : payload.displayMode === "story"
           ? "已开启，正在显示故事书文本。"
+          : payload.displayMode === "technology"
+          ? "已开启，正在显示科技树（离开科技页后恢复原来的画面）。"
           : battleBoardVisible
             ? "已开启：新战役时显示决战版图，写入战利品后恢复地图。"
             : "已开启：战斗中显示 AIBP 镜像与地形卡。"
