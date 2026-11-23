@@ -836,6 +836,12 @@
       if (mainMatch) return mainMatch;
     }
 
+    // 私人版：其它章节提示（目前是「特殊余波」）同样优先跳到那一章的同号段落。
+    if (options.chapterHint && options.chapterHint !== "main") {
+      const hinted = matches.find((entry) => entry.chapterKey === options.chapterHint);
+      if (hinted) return hinted;
+    }
+
     if (options.entryKey) {
       const exact = matches.find((entry) => entry.key === options.entryKey);
       return exact || null;
@@ -969,7 +975,9 @@
 
   function linkify(text, book) {
     const knownIds = new Set(book.entries.map((entry) => entry.id));
-    const pattern = /((?:主线故事|Main Story)[^0-9A-Z]{0,20})?(M\d{3,4}|\d{4})/g;
+    // 编号前面写着章节名时按那一章跳：「主线故事 0004」去主线，
+    // 私人版：「特殊余波0004」（民间版写作「特殊后果」）去特殊余波，不再落到主线的同号段落。
+    const pattern = /((?:主线故事|主线剧情|Main Story)[^0-9A-Z]{0,20})?((?:特殊余波|特殊后果|Special Aftermath)[^0-9A-Z]{0,6})?(M\d{3,4}|\d{4})/g;
     let html = "";
     let lastIndex = 0;
     let match;
@@ -986,13 +994,14 @@
 
     while ((match = pattern.exec(text)) !== null) {
       const prefix = match[1] || "";
-      const rawId = match[2];
+      const aftermathPrefix = match[2] || "";
+      const rawId = match[3];
       const resolved = resolveId(rawId);
       const idStart = match.index + match[0].indexOf(rawId);
 
       html += annotateEntitiesInEscapedHtml(escapeHtml(text.slice(lastIndex, idStart)));
       if (resolved) {
-        const hint = prefix ? ' data-chapter-hint="main"' : "";
+        const hint = aftermathPrefix ? ' data-chapter-hint="special-aftermath"' : prefix ? ' data-chapter-hint="main"' : "";
         html += `<button class="jump-link" type="button" data-id="${resolved}"${hint}>${escapeHtml(rawId)}</button>`;
       } else {
         html += annotateEntitiesInEscapedHtml(escapeHtml(rawId));
