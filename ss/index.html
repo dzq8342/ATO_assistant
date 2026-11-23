@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ATO 第二屏幕</title>
-  <link rel="stylesheet" href="./styles.css?v=20261122-technology1">
+  <link rel="stylesheet" href="./styles.css?v=20261123-image1">
   <link rel="stylesheet" href="../assets/theme.css?v=20261001">
   <link rel="stylesheet" href="../story/assets/mixed-media/styles.css?v=20261108-story-marks4">
   <script src="../story/data/english-source-data.js?v=20261011-english4"></script>
@@ -30,6 +30,11 @@
     <!-- 私人版：主机切到科技标签页时显示科技树（内嵌 technology/index.html?second=1，只读）。 -->
     <section id="technologyView" class="technology-stage" aria-label="科技树" hidden>
       <iframe id="technologyFrame" class="technology-frame" title="ATO 科技树"></iframe>
+    </section>
+    <!-- 私人版：主控台点开剧情/末日大图时全屏显示同一张图。 -->
+    <section id="imageView" class="image-stage" aria-label="主控台大图" hidden>
+      <img id="imageViewImg" alt="">
+      <div id="imageViewTitle" class="image-stage-title"></div>
     </section>
     <section id="storyView" class="story-view" aria-label="当前故事文本" hidden>
       <article class="story-card">
@@ -97,7 +102,7 @@
   <script src="../story/assets/story-marks.js?v=20261108-story-marks4"></script>
   <script async data-ato-mm-map src="../story/assets/mixed-media/mapping.js?v=20261023-runtime1"></script>
   <script src="../aibp/panel-overlay.js?v=20261013-panel-overlay1"></script>
-  <script src="./app.js?v=20261122-technology1"></script>
+  <script src="./app.js?v=20261123-image1"></script>
   <script src="../assets/ato-terms.js?v=20261112-hub-terms"></script>
   <script src="../assets/english-terms.js?v=20261011-english4"></script>
   <script src="../assets/english-ui.js?v=20261011-aibp-state1"></script>

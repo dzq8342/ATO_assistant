@@ -2,6 +2,7 @@
 // 用法：window.atoImageViewer.open(src, alt, options)。首次打开时才创建对话框并注入样式。
 // options.initial = "actual"：打开时按图片原始像素 100% 显示，并从图片顶部开始（剧情书扫描图用）；
 // 默认按屏幕大小适配显示。
+// options.onClose：查看器关闭时调用一次（主控台据此把第二屏还原）。
 // 手势：双指缩放（0.3–6 倍，以两指中点为中心）、单指拖动、双击在适配大小与 2.5 倍间
 // 切换（已缩放时双击还原）、鼠标滚轮缩放；右上角 × 或未放大时点图片外关闭。
 (function () {
@@ -197,11 +198,21 @@
       zoomAt(scale * (event.deltaY < 0 ? 1.15 : 1 / 1.15), p.x, p.y);
     }, { passive: false });
     dialog.querySelector(".card-image-viewer-close").addEventListener("click", () => dialog.close());
-    dialog.addEventListener("close", () => { pointers.clear(); pinch = null; pan = null; reset(); img.removeAttribute("src"); });
+    let closeHandler = null;
+    dialog.addEventListener("close", () => {
+      pointers.clear(); pinch = null; pan = null; reset(); img.removeAttribute("src");
+      const handler = closeHandler;
+      closeHandler = null;
+      if (typeof handler === "function") { try { handler(); } catch (error) { console.warn(error); } }
+    });
     window.addEventListener("resize", () => { if (dialog.open && scale > 1) apply(); });
     return {
       open(src, alt, options = {}) {
         if (!src) return;
+        // 上一张还开着就直接换图：先把上一张的关闭回调交还，免得新图的回调被吞掉。
+        const previousHandler = closeHandler;
+        closeHandler = typeof options.onClose === "function" ? options.onClose : null;
+        if (previousHandler && previousHandler !== closeHandler) { try { previousHandler(); } catch (error) { console.warn(error); } }
         reset();
         MAX = 6;
         img.alt = alt || "";

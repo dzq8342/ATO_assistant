@@ -3120,7 +3120,7 @@
   </dialog>
 
   <script src="./assets/page-focus-router.js?v=20261113-theatre"></script>
-  <script src="./assets/image-viewer.js?v=20261111-shared1"></script>
+  <script src="./assets/image-viewer.js?v=20261123-onclose1"></script>
   <script src="./assets/story-doom-card-data.js?v=20261014-card-face-audit2"></script>
   <script src="./assets/exploration-card-tags.js?v=20261018-card-audit1"></script>
   <script src="./assets/exploration-card-rules.js?v=20261018-card-audit1"></script>
@@ -5106,6 +5106,8 @@
           ? "已开启，当前暂无内容。"
           : payload.displayMode === "story"
           ? "已开启，正在显示故事书文本。"
+          : payload.displayMode === "image"
+          ? "已开启，正在显示主控台打开的大图。"
           : payload.displayMode === "technology"
           ? "已开启，正在显示科技树（离开科技页后恢复原来的画面）。"
           : battleBoardVisible
@@ -7365,7 +7367,71 @@
 
     // 私人版：原图查看器见 assets/image-viewer.js（与剧情书官方扫描图共用）。
     function openCardImageViewer(src, alt) {
-      window.atoImageViewer?.open(src, alt);
+      const token = showCardImageOnSecondScreen(src, alt);
+      window.atoImageViewer?.open(src, alt, { onClose: () => restoreSecondScreenAfterCardImage(token) });
+    }
+
+    // 私人版：主控台点开剧情/末日大图时，第二屏同步全屏显示同一张图；关闭大图后第二屏
+    // 恢复成打开前的画面（地图、AIBP、剧情书或科技树）。第二屏没开启时什么都不做。
+    let cardImageSecondScreenToken = 0;
+    let cardImageSecondScreenPrevious = "";
+    function appRelativeImagePath(src) {
+      try {
+        const url = new URL(String(src || ""), window.location.href);
+        const root = new URL("./", window.location.href);
+        if (url.origin !== root.origin || !url.pathname.startsWith(root.pathname)) return "";
+        return decodeURIComponent(url.pathname.slice(root.pathname.length));
+      } catch {
+        return "";
+      }
+    }
+    function showCardImageOnSecondScreen(src, alt) {
+      const token = ++cardImageSecondScreenToken;
+      const path = appRelativeImagePath(src);
+      if (!path) return token;
+      void (async () => {
+        try {
+          const response = await fetch(`${authUrl}?action=second-screen-status`, { cache: "no-store" });
+          const payload = await response.json().catch(() => null);
+          if (!response.ok || !payload?.ok || !payload.enabled || token !== cardImageSecondScreenToken) return;
+          if (!cardImageSecondScreenPrevious) {
+            const mode = String(payload.displayMode || "map");
+            cardImageSecondScreenPrevious = ["map", "aibp", "story", "blank", "technology"].includes(mode) ? mode : "map";
+          }
+          const restoreTo = cardImageSecondScreenPrevious;
+          await fetch(`${authUrl}?action=second-screen-mode`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: "image", imageView: { src: path, title: String(alt || "") } }),
+          });
+          // 请求在路上时大图已经关了（而且没有换成别的图）：补一次还原。
+          if (token !== cardImageSecondScreenToken && !cardImageSecondScreenPrevious) postSecondScreenMode(restoreTo);
+        } catch {
+          /* 第二屏没开启或网络异常时保持原样 */
+        }
+      })();
+      return token;
+    }
+    function restoreSecondScreenAfterCardImage(token) {
+      // 换成另一张图时旧的关闭回调也会被调用，那时不还原。
+      if (token !== cardImageSecondScreenToken) return;
+      cardImageSecondScreenToken += 1;
+      const previous = cardImageSecondScreenPrevious;
+      cardImageSecondScreenPrevious = "";
+      if (previous) postSecondScreenMode(previous);
+    }
+    function postSecondScreenMode(mode) {
+      try {
+        // keepalive：页面正在关闭或跳转时请求也能发出去。
+        fetch(`${authUrl}?action=second-screen-mode`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode, imageView: { src: "", title: "" } }),
+          keepalive: true,
+        }).catch(() => {});
+      } catch {
+        /* ignore */
+      }
     }
 
     function openCardTrackDialog(groupId) {

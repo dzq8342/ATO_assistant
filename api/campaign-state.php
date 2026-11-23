@@ -196,6 +196,23 @@ function normalize_technology_view($value): array {
   return $view;
 }
 
+// 私人版：主控台点开剧情/末日大图时第二屏同步显示的那张图。src 是相对应用根目录的
+// 图片路径（不许带协议、不许以 / 开头、不许有 .. 段），title 是图片说明；空串表示没有图。
+function normalize_image_view($value): array {
+  $view = ['src' => '', 'title' => ''];
+  if (!is_array($value)) return $view;
+  $src = is_string($value['src'] ?? null) ? trim($value['src']) : '';
+  $title = is_string($value['title'] ?? null) ? trim($value['title']) : '';
+  $safeSrc = $src !== '' && strlen($src) <= 500
+    && preg_match('/^[^\x00-\x1f<>"\'\\\\]+$/u', $src) === 1
+    && preg_match('#^[A-Za-z][A-Za-z0-9+.-]*:#', $src) !== 1
+    && $src[0] !== '/'
+    && !in_array('..', explode('/', $src), true);
+  if ($safeSrc) $view['src'] = $src;
+  if (strlen($title) <= 300 && preg_match('/^[^\x00-\x1f<>]*$/u', $title) === 1) $view['title'] = $title;
+  return $view;
+}
+
 function read_second_screens(string $file): array {
   $store = read_json_file($file, ['version' => 1, 'screens' => []]);
   $store['screens'] = is_array($store['screens'] ?? null) ? $store['screens'] : [];
@@ -365,6 +382,7 @@ function public_second_screen_payload(array $campaign, array $screenEntry = []):
     'story' => $storyState,
     'technology' => $technologyState,
     'technologyView' => normalize_technology_view($screenEntry['technologyView'] ?? null),
+    'imageView' => normalize_image_view($screenEntry['imageView'] ?? null),
     'displayMode' => (string) ($screenEntry['displayMode'] ?? 'map'),
     // 第二屏那台设备靠这个字段跟主控台的外观保持一致（见 normalize_theme_setting）。
     'theme' => second_screen_theme($screenEntry),
@@ -892,7 +910,7 @@ if ($action === 'second-screen-status') {
       $battleBoardVisible = !array_key_exists('battleBoardVisible', $entry) || !empty($entry['battleBoardVisible']);
       $theme = second_screen_theme($entry);
       $requestedMode = (string) ($entry['displayMode'] ?? 'map');
-      $displayMode = in_array($requestedMode, ['aibp', 'story', 'blank', 'technology'], true) ? $requestedMode : 'map';
+      $displayMode = in_array($requestedMode, ['aibp', 'story', 'blank', 'technology', 'image'], true) ? $requestedMode : 'map';
       break;
     }
   }
@@ -978,7 +996,9 @@ if ($action === 'second-screen-mode') {
   $payload = json_decode((string) $raw, true);
   if (!is_array($payload)) respond(400, ['ok' => false, 'error' => 'Request body must be JSON.']);
   $mode = strtolower(trim((string) ($payload['mode'] ?? '')));
-  $mode = in_array($mode, ['aibp', 'story', 'blank', 'technology'], true) ? $mode : 'map';
+  $mode = in_array($mode, ['aibp', 'story', 'blank', 'technology', 'image'], true) ? $mode : 'map';
+  // 私人版：主控台点开大图时连同图片路径一起发过来；没带这个字段就保持原值。
+  $imageView = array_key_exists('imageView', $payload) ? normalize_image_view($payload['imageView']) : null;
   // 私人版：科技页随模式一起报告当前看的科技树和打开的大图；没带这个字段就保持原值。
   $technologyView = array_key_exists('technologyView', $payload) ? normalize_technology_view($payload['technologyView']) : null;
 
@@ -1001,6 +1021,10 @@ if ($action === 'second-screen-mode') {
       $store['screens'][$token]['displayMode'] = $mode;
       $store['screens'][$token]['modeChangedAt'] = gmdate('c');
       unset($store['screens'][$token]['focusedModule'], $store['screens'][$token]['focusedAt']);
+      $changed = true;
+    }
+    if ($imageView !== null && normalize_image_view($entry['imageView'] ?? null) !== $imageView) {
+      $store['screens'][$token]['imageView'] = $imageView;
       $changed = true;
     }
     if ($technologyView !== null && normalize_technology_view($entry['technologyView'] ?? null) !== $technologyView) {

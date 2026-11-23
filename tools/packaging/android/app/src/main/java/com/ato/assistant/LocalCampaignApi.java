@@ -294,6 +294,8 @@ final class LocalCampaignApi {
     settings.put("displayMode", mode);
     // 私人版：科技页随模式一起报告当前看的科技树和打开的大图；没带这个字段就保持原值。
     if (payload.has("technologyView")) settings.put("technologyView", normalizeTechnologyView(payload.opt("technologyView")));
+    // 私人版：主控台点开剧情/末日大图时连同图片路径一起发过来；没带这个字段就保持原值。
+    if (payload.has("imageView")) settings.put("imageView", normalizeImageView(payload.opt("imageView")));
     if ("aibp".equals(mode)) settings.put("battleBoardVisible", true);
     saveSecondScreenSettings(settings);
     JSONObject response = ok();
@@ -353,6 +355,7 @@ final class LocalCampaignApi {
     screen.put("story", storyState);
     screen.put("technology", technologyState);
     screen.put("technologyView", normalizeTechnologyView(settings.opt("technologyView")));
+    screen.put("imageView", normalizeImageView(settings.opt("imageView")));
     screen.put("displayMode", settings.optString("displayMode", "map"));
     screen.put("mapRevision", revisions.optInt("map", 0));
     screen.put("aibpRevision", revisions.optInt("aibp", 0));
@@ -400,7 +403,8 @@ final class LocalCampaignApi {
 
   // 私人版：第二屏多一种「科技」模式（显示科技树）。
   private static boolean validSecondScreenMode(String mode) {
-    return "aibp".equals(mode) || "story".equals(mode) || "blank".equals(mode) || "technology".equals(mode);
+    return "aibp".equals(mode) || "story".equals(mode) || "blank".equals(mode) || "technology".equals(mode)
+        || "image".equals(mode);
   }
 
   // 私人版：主机正在看哪一页科技树（page，如 c1）、打开了哪张科技大图（nodeId，空串表示没打开）。
@@ -417,6 +421,28 @@ final class LocalCampaignApi {
     String nodeId = rawNode instanceof String ? ((String) rawNode).trim() : "";
     if (page.matches("[A-Za-z0-9._-]{1,24}")) view.put("page", page);
     if (nodeId.length() <= 160 && !nodeId.matches("(?s).*[\\x00-\\x1f<>\"].*")) view.put("nodeId", nodeId);
+    return view;
+  }
+
+  // 私人版：第二屏同步显示的大图。src 是相对应用根目录的图片路径（不许带协议、不许以 / 开头、
+  // 不许有 .. 段），title 是图片说明。规则与 api/campaign-state.php 的 normalize_image_view 一致。
+  private static JSONObject normalizeImageView(Object value) throws JSONException {
+    JSONObject view = new JSONObject();
+    view.put("src", "");
+    view.put("title", "");
+    if (!(value instanceof JSONObject)) return view;
+    JSONObject source = (JSONObject) value;
+    Object rawSrc = source.opt("src");
+    Object rawTitle = source.opt("title");
+    String src = rawSrc instanceof String ? ((String) rawSrc).trim() : "";
+    String title = rawTitle instanceof String ? ((String) rawTitle).trim() : "";
+    boolean safeSrc = !src.isEmpty() && src.length() <= 500
+        && !src.matches("(?s).*[\\x00-\\x1f<>\"'\\\\].*")
+        && !src.matches("(?s)^[A-Za-z][A-Za-z0-9+.-]*:.*")
+        && !src.startsWith("/")
+        && !java.util.Arrays.asList(src.split("/", -1)).contains("..");
+    if (safeSrc) view.put("src", src);
+    if (title.length() <= 300 && !title.matches("(?s).*[\\x00-\\x1f<>].*")) view.put("title", title);
     return view;
   }
 

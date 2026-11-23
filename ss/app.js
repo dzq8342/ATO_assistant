@@ -65,6 +65,9 @@ const elements = {
   damageCards: document.querySelector("#damageCards"),
   unavailableView: document.querySelector("#unavailableView"),
   technologyView: document.querySelector("#technologyView"),
+  imageView: document.querySelector("#imageView"),
+  imageViewImg: document.querySelector("#imageViewImg"),
+  imageViewTitle: document.querySelector("#imageViewTitle"),
   technologyFrame: document.querySelector("#technologyFrame"),
   unavailableMessage: document.querySelector("#unavailableMessage"),
 };
@@ -323,6 +326,7 @@ function showUnavailable(message = "") {
   elements.storyView.hidden = true;
   elements.battleView.hidden = true;
   if (typeof closeTechnology === 'function') closeTechnology();
+  if (typeof closeImageView === 'function') closeImageView();
 }
 
 function openBlank() {
@@ -334,6 +338,7 @@ function openBlank() {
   elements.battleView.hidden = true;
   elements.mapFrame.removeAttribute("src");
   if (typeof closeTechnology === 'function') closeTechnology();
+  if (typeof closeImageView === 'function') closeImageView();
 }
 
 function openMap() {
@@ -343,6 +348,7 @@ function openMap() {
   elements.storyView.hidden = true;
   elements.battleView.hidden = true;
   if (typeof closeTechnology === 'function') closeTechnology();
+  if (typeof closeImageView === 'function') closeImageView();
   elements.mapStage.hidden = false;
   if (!elements.mapFrame.getAttribute("src")) elements.mapFrame.src = "../map/index.html?second=1";
 }
@@ -438,6 +444,7 @@ function openStory(screen) {
   elements.mapStage.hidden = true;
   elements.battleView.hidden = true;
   if (typeof closeTechnology === 'function') closeTechnology();
+  if (typeof closeImageView === 'function') closeImageView();
   elements.storyView.hidden = false;
   // 官方版是「只看扫描图」，但该条目没有对应扫描图时必须退回正文：
   // 只按 story.imagesOnly 走图，第二屏会只剩标题、正文一片空白。
@@ -873,6 +880,7 @@ function openBattle(screen) {
   elements.mapStage.hidden = true;
   elements.storyView.hidden = true;
   if (typeof closeTechnology === 'function') closeTechnology();
+  if (typeof closeImageView === 'function') closeImageView();
   elements.battleView.hidden = false;
   const scale = Math.max(60, Math.min(200, Number(screen.displayScales?.battleBoard || 100)));
   const rotation = [0, 90, 180, 270].includes(Number(screen.battleRotation)) ? Number(screen.battleRotation) : 0;
@@ -1000,12 +1008,43 @@ function openTechnology(screen) {
   elements.storyView.hidden = true;
   elements.battleView.hidden = true;
   elements.mapFrame.removeAttribute("src");
+  closeImageView();
   elements.technologyView.hidden = false;
   if (!elements.technologyFrame.getAttribute("src")) {
     technologyFrameReady = false;
     elements.technologyFrame.src = "../technology/index.html?second=1";
   }
   postTechnologyScreen();
+}
+
+// 私人版：主控台点开剧情/末日大图时，全屏显示同一张图。图片路径是相对应用根目录的
+// （服务端已经检查过不带协议、不以 / 开头、没有 ..），按第二屏自己的地址解析。
+function openImageView(screen) {
+  mixedMediaRuntime()?.close?.();
+  const view = screen.imageView || {};
+  const src = typeof view.src === "string" ? view.src : "";
+  if (!src) {
+    openMap();
+    return;
+  }
+  activeMode = "image";
+  elements.unavailableView.hidden = true;
+  elements.mapStage.hidden = true;
+  elements.storyView.hidden = true;
+  elements.battleView.hidden = true;
+  elements.mapFrame.removeAttribute("src");
+  closeTechnology();
+  const url = new URL("../" + src.split("/").map(encodeURIComponent).join("/"), document.baseURI).href;
+  if (elements.imageViewImg.getAttribute("src") !== url) elements.imageViewImg.setAttribute("src", url);
+  elements.imageViewImg.alt = String(view.title || "");
+  elements.imageViewTitle.textContent = String(view.title || "");
+  elements.imageView.hidden = false;
+}
+
+function closeImageView() {
+  if (!elements.imageView || elements.imageView.hidden) return;
+  elements.imageView.hidden = true;
+  elements.imageViewImg.removeAttribute("src");
 }
 
 // 离开科技模式时卸掉内嵌页，下次进来重新加载，避免在后台一直占着内存。
@@ -1030,6 +1069,7 @@ async function checkConnection() {
     else if (payload.screen.displayMode === "story") openStory(payload.screen);
     else if (payload.screen.displayMode === "blank") openBlank();
     else if (payload.screen.displayMode === "technology") openTechnology(payload.screen);
+    else if (payload.screen.displayMode === "image") openImageView(payload.screen);
     else openMap();
   } catch (error) {
     showUnavailable(String(error.message || error));
