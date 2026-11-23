@@ -35,6 +35,29 @@ final class LocalCampaignApi {
     secondScreenServer = server;
   }
 
+  // 私人版：App 启动（以及登录）时默认开启第二屏并显示地图：启动局域网服务，把显示模式
+  // 重置为地图（不沿用上次退出时停在的剧情书、科技树或大图）。没登录时什么都不做。
+  void openSecondScreenOnLaunch() {
+    synchronized (lock) {
+      openSecondScreenWithMap();
+    }
+  }
+
+  private void openSecondScreenWithMap() {
+    if (currentUser.isEmpty() || secondScreenServer == null) return;
+    try {
+      JSONObject settings = loadSecondScreenSettings();
+      secondScreenServer.start();
+      settings.put("enabled", true);
+      settings.put("displayMode", "map");
+      settings.remove("technologyView");
+      settings.remove("imageView");
+      saveSecondScreenSettings(settings);
+    } catch (Exception error) {
+      // 局域网服务起不来（例如没有网络）时不影响 App 本身，之后仍可在主控台手动开启。
+    }
+  }
+
   void attachImageIndex(java.util.concurrent.Callable<JSONObject> provider) {
     imageIndex = provider;
   }
@@ -215,6 +238,7 @@ final class LocalCampaignApi {
     if (!username.matches("[a-z0-9][a-z0-9_-]{2,31}")) username = "local";
     commitPreferences(store.edit().putString("currentUser", username));
     currentUser = username;
+    openSecondScreenWithMap();
     JSONObject response = ok();
     put(response, "user", user());
     return response;

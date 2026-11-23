@@ -101,6 +101,9 @@ public final class MainActivity extends Activity {
     localApi.attachImageIndex(atopackStore::aibpImageIndex);
     secondScreenServer = new LocalSecondScreenServer(this, atopackStore, localApi);
     localApi.attachSecondScreenServer(secondScreenServer);
+    // 私人版：启动 App 时默认开启第二屏并显示地图（开网络端口放到后台线程，不卡启动画面）。
+    final LocalCampaignApi launchApi = localApi;
+    new Thread(launchApi::openSecondScreenOnLaunch, "ato-second-screen-launch").start();
     LinearLayout layout = new LinearLayout(this);
     layout.setOrientation(LinearLayout.VERTICAL);
     // Android 15 draws the status bar transparently over this root view.
