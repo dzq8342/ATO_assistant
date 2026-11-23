@@ -1061,7 +1061,7 @@ button.gear-group-name:hover {
 <link rel="stylesheet" href="../api/cycle-theme.css">
 <link rel="stylesheet" href="../assets/theme.css?v=20261001">
 <link rel="stylesheet" href="editorial.css?v=20261001-cycle-menu">
-<link rel="stylesheet" href="tech-tree.css?v=20261122-second-screen1">
+<link rel="stylesheet" href="tech-tree.css?v=20261123-second-wheel">
 <link rel="stylesheet" href="arsenal.css?v=20261118-ascend-core1">
 <link rel="stylesheet" href="../assets/card-art.css?v=20261017-corners1">
 <script src="../assets/card-art.js?v=20261017-corners1" defer></script>
@@ -5459,8 +5459,10 @@ function attachTreePinchZoom(board) {
   const endPinch = event => { if (pinch && event.touches.length < 2) pinch = null; };
   board.addEventListener('touchend', endPinch, { passive: true });
   board.addEventListener('touchcancel', endPinch, { passive: true });
+  // 私人版：第二屏在电脑上打开时直接滚轮缩放（不用按住 Ctrl）；拖动沿用下面的鼠标拖动。
   board.addEventListener('wheel', event => {
-    if (!event.ctrlKey || !treeViewState) return;
+    const secondScreen = typeof TECH_SECOND_SCREEN !== 'undefined' && TECH_SECOND_SCREEN;
+    if ((!event.ctrlKey && !secondScreen) || !treeViewState) return;
     event.preventDefault();
     const rect = board.getBoundingClientRect();
     zoomTreeAt(treeViewState.zoom * (event.deltaY < 0 ? 1.1 : 1 / 1.1), event.clientX - rect.left, event.clientY - rect.top);

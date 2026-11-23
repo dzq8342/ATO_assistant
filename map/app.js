@@ -2626,8 +2626,9 @@ if (elements.tileGridViewport) {
   viewport.addEventListener("touchend", endPinch, { passive: true });
   viewport.addEventListener("touchcancel", endPinch, { passive: true });
 
+  // 私人版：第二屏在电脑上打开时直接滚轮缩放（不用按住 Ctrl），按住鼠标左键拖动来移动。
   viewport.addEventListener("wheel", (event) => {
-    if (!event.ctrlKey) return;
+    if (!event.ctrlKey && !secondScreenMode) return;
     event.preventDefault();
     if (!pinch) liveZoom = commitTimer ? liveZoom : state.mapZoom;
     const rect = viewport.getBoundingClientRect();
@@ -2635,6 +2636,29 @@ if (elements.tileGridViewport) {
     window.clearTimeout(commitTimer);
     commitTimer = window.setTimeout(() => { commitTimer = 0; commitZoom(); }, 250);
   }, { passive: false });
+
+  if (secondScreenMode) {
+    let drag = null;
+    viewport.addEventListener("pointerdown", (event) => {
+      if (event.pointerType !== "mouse" || event.button !== 0) return;
+      drag = { x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop, id: event.pointerId };
+      viewport.setPointerCapture?.(event.pointerId);
+      viewport.classList.add("is-dragging");
+      event.preventDefault();
+    });
+    viewport.addEventListener("pointermove", (event) => {
+      if (!drag || event.pointerId !== drag.id) return;
+      viewport.scrollLeft = drag.left - (event.clientX - drag.x);
+      viewport.scrollTop = drag.top - (event.clientY - drag.y);
+    });
+    const stopDrag = () => {
+      drag = null;
+      viewport.classList.remove("is-dragging");
+    };
+    viewport.addEventListener("pointerup", stopDrag);
+    viewport.addEventListener("pointercancel", stopDrag);
+    viewport.addEventListener("lostpointercapture", stopDrag);
+  }
 }
 elements.showBackToggle.addEventListener("change", () => {
   state.showBack = elements.showBackToggle.checked;

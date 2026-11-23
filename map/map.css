@@ -186,3 +186,8 @@ button.secondary.danger:hover { border-color: var(--danger); }
 
 /* 私人版：隐藏「标签」按钮（作者用的地图打标开发工具，安卓版无法保存）。所有布局都隐藏。 */
 #openTagEditorButton { display: none !important; }
+
+/* 私人版：第二屏在电脑上可以按住鼠标左键拖动地图（脚本见 app.js 的手势缩放部分）。 */
+body.second-screen-map .tile-grid-viewport { cursor: grab; }
+body.second-screen-map .tile-grid-viewport.is-dragging { cursor: grabbing; user-select: none; }
+
