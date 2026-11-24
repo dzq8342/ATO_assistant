@@ -6,7 +6,16 @@ const mapData = window.ATO_MAP_DATA || { cycles: [] };
 const mapTagData = window.ATO_MAP_TILE_TAGS || { tagDefinitions: [], tiles: {} };
 const secondScreenMode = new URLSearchParams(window.location.search).get("second") === "1";
 // 私人版：第二屏双指缩放后的本机比例（见文件末尾的手势缩放）；null 表示跟随主控台。
+// 记在第二屏这台设备上（localStorage），下次打开第二屏地图时沿用上次的比例；
+// 剧情书、科技树、大图各记各的。
+const SECOND_SCREEN_MAP_ZOOM_KEY = "ato-second-screen-zoom-map";
 let secondScreenLocalZoom = null;
+if (secondScreenMode) {
+  try {
+    const saved = Number(window.localStorage.getItem(SECOND_SCREEN_MAP_ZOOM_KEY));
+    if (Number.isFinite(saved) && saved >= 50 && saved <= 410) secondScreenLocalZoom = saved;
+  } catch (_) { /* 浏览器不让存时就跟随主控台 */ }
+}
 const cycleIds = mapData.cycles.map((cycle) => cycle.id);
 const c1AlternateTileAssets = Object.fromEntries(
   ["009", "013", "014", "018", "022", "023", "035"].map((id) => [id, {
@@ -2581,7 +2590,10 @@ if (elements.tileGridViewport) {
       zoomViewportTo(normalized, rect.width / 2, rect.height / 2);
     }
     liveZoom = normalized;
-    if (secondScreenMode) secondScreenLocalZoom = normalized;
+    if (secondScreenMode) {
+      secondScreenLocalZoom = normalized;
+      try { window.localStorage.setItem(SECOND_SCREEN_MAP_ZOOM_KEY, String(normalized)); } catch (_) { /* ignore */ }
+    }
     if (state.mapZoom === normalized) return;
     state.mapZoom = normalized;
     saveState();

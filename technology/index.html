@@ -5429,6 +5429,18 @@ function zoomTreeAt(next, fx, fy) {
   const zoom = treeViewState.zoom;
   board.scrollLeft = contentX * zoom + (parseFloat(canvas.style.left) || 0) - fx;
   board.scrollTop = contentY * zoom + (parseFloat(canvas.style.top) || 0) - fy;
+  // 私人版：第二屏上记住这台设备的科技树比例，下次打开（或换页）时沿用。
+  if (typeof TECH_SECOND_SCREEN !== 'undefined' && TECH_SECOND_SCREEN) {
+    try { window.localStorage.setItem('ato-second-screen-zoom-technology', String(zoom)); } catch (_) { /* ignore */ }
+  }
+}
+function savedTechnologySecondScreenZoom() {
+  try {
+    const value = Number(window.localStorage.getItem('ato-second-screen-zoom-technology'));
+    return Number.isFinite(value) && value >= 0.1 && value <= 2.5 ? value : null;
+  } catch (_) {
+    return null;
+  }
 }
 function attachTreePinchZoom(board) {
   let pinch = null;
@@ -5772,6 +5784,13 @@ function applyTechnologySecondScreen(screen) {
     treeViewState && (treeViewState.autoFit = true);
     renderTabs();
     renderTree();
+    // 用过缩放的话沿用上次的比例（从左上角看起），没用过就显示整棵树。
+    const savedZoom = savedTechnologySecondScreenZoom();
+    if (savedZoom && treeViewState) {
+      treeViewState.autoFit = false;
+      setTreeZoom(savedZoom, false);
+      document.getElementById('techBoard')?.scrollTo(0, 0);
+    }
   }
   const nodeKey = `${page}|${view.nodeId || ''}`;
   if (nodeKey !== techSecondScreenNodeKey) {

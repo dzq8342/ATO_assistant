@@ -1037,7 +1037,10 @@ function openImageView(screen) {
   elements.mapFrame.removeAttribute("src");
   closeTechnology();
   const url = new URL("../" + src.split("/").map(encodeURIComponent).join("/"), document.baseURI).href;
-  if (elements.imageViewImg.getAttribute("src") !== url) elements.imageViewImg.setAttribute("src", url);
+  if (elements.imageViewImg.getAttribute("src") !== url) {
+    elements.imageViewImg.setAttribute("src", url);
+    imageLocalZoom?.resetPosition();
+  }
   elements.imageViewImg.alt = String(view.title || "");
   elements.imageViewTitle.textContent = String(view.title || "");
   elements.imageView.hidden = false;
@@ -1049,64 +1052,62 @@ function closeImageView() {
   elements.imageViewImg.removeAttribute("src");
 }
 
-// 私人版：第二屏的剧情书可以在本机缩放和拖动（和地图一样）：滚轮以鼠标位置为中心缩放，
-// 按住左键拖动移动；触屏上单指拖动、双指捏合缩放。只在这台设备上生效，不影响主机；
-// 主机换到另一段剧情时还原。
-const storyZoom = { scale: 1, x: 0, y: 0 };
-function storyZoomCard() {
-  return elements.storyView?.querySelector(".story-card") || null;
-}
-function applyStoryZoom() {
-  const card = storyZoomCard();
-  if (!card) return;
-  const plain = storyZoom.scale === 1 && storyZoom.x === 0 && storyZoom.y === 0;
-  card.style.transformOrigin = "0 0";
-  card.style.transform = plain ? "" : `translate(${storyZoom.x}px, ${storyZoom.y}px) scale(${storyZoom.scale})`;
-  elements.storyView.classList.toggle("story-zoomed", !plain);
-}
-function resetStoryZoom() {
-  storyZoom.scale = 1;
-  storyZoom.x = 0;
-  storyZoom.y = 0;
-  applyStoryZoom();
-}
-// 把缩放改为 next，并让视图里 (px, py) 处的内容保持不动。
-function zoomStoryAt(next, px, py) {
-  const scale = Math.max(0.5, Math.min(5, next));
-  storyZoom.x = px - (px - storyZoom.x) * scale / storyZoom.scale;
-  storyZoom.y = py - (py - storyZoom.y) * scale / storyZoom.scale;
-  storyZoom.scale = scale;
-  if (Math.abs(scale - 1) < 0.02 && Math.abs(storyZoom.x) < 1 && Math.abs(storyZoom.y) < 1) resetStoryZoom();
-  else applyStoryZoom();
-}
-(function attachStoryZoom() {
-  const view = elements.storyView;
-  if (!view) return;
+// 私人版：第二屏的剧情书和主控台大图可以在本机缩放和拖动（和地图一样）：滚轮以鼠标位置
+// 为中心缩放，按住左键拖动移动；触屏上单指拖动、双指捏合缩放。只在这台设备上生效，不影响主机。
+// 剧情书、大图、地图、科技树各记各的比例（localStorage），下次打开时沿用上次的比例；
+// 换一段剧情或换一张图时只把拖动位置归零，比例保留。
+function createLocalZoom({ view, target, storageKey, active, minScale = 0.5, maxScale = 5 }) {
+  const zoom = { scale: 1, x: 0, y: 0 };
+  try {
+    const saved = Number(window.localStorage.getItem(storageKey));
+    if (Number.isFinite(saved) && saved >= minScale && saved <= maxScale) zoom.scale = saved;
+  } catch (_) { /* 浏览器不让存时从 100% 开始 */ }
+  const save = () => {
+    try { window.localStorage.setItem(storageKey, String(zoom.scale)); } catch (_) { /* ignore */ }
+  };
+  const apply = () => {
+    const element = target();
+    if (!element) return;
+    const plain = zoom.scale === 1 && zoom.x === 0 && zoom.y === 0;
+    element.style.transformOrigin = "0 0";
+    element.style.transform = plain ? "" : `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})`;
+    view.classList.toggle("local-zoomed", !plain);
+  };
+  // 把缩放改为 next，并让视图里 (px, py) 处的内容保持不动。
+  const zoomAt = (next, px, py) => {
+    const scale = Math.max(minScale, Math.min(maxScale, next));
+    zoom.x = px - (px - zoom.x) * scale / zoom.scale;
+    zoom.y = py - (py - zoom.y) * scale / zoom.scale;
+    zoom.scale = Math.abs(scale - 1) < 0.02 ? 1 : scale;
+    if (zoom.scale === 1 && Math.abs(zoom.x) < 1 && Math.abs(zoom.y) < 1) { zoom.x = 0; zoom.y = 0; }
+    apply();
+    save();
+  };
   const local = (event) => {
     const rect = view.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   };
   view.addEventListener("wheel", (event) => {
-    if (activeMode !== "story") return;
+    if (!active()) return;
     event.preventDefault();
     const point = local(event);
-    zoomStoryAt(storyZoom.scale * (event.deltaY < 0 ? 1.1 : 1 / 1.1), point.x, point.y);
+    zoomAt(zoom.scale * (event.deltaY < 0 ? 1.1 : 1 / 1.1), point.x, point.y);
   }, { passive: false });
   const pointers = new Map();
   let drag = null;
   let pinch = null;
   view.addEventListener("pointerdown", (event) => {
-    if (activeMode !== "story" || (event.pointerType === "mouse" && event.button !== 0)) return;
+    if (!active() || (event.pointerType === "mouse" && event.button !== 0)) return;
     if (event.target.closest?.("a, button, input, select, textarea")) return;
     pointers.set(event.pointerId, local(event));
     view.setPointerCapture?.(event.pointerId);
     if (pointers.size === 1) {
       const point = pointers.get(event.pointerId);
-      drag = { sx: point.x, sy: point.y, x: storyZoom.x, y: storyZoom.y };
+      drag = { sx: point.x, sy: point.y, x: zoom.x, y: zoom.y };
       view.classList.add("is-dragging");
     } else if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
-      pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, scale: storyZoom.scale, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
+      pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, scale: zoom.scale, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
       drag = null;
     }
     event.preventDefault();
@@ -1118,16 +1119,16 @@ function zoomStoryAt(next, px, py) {
       const [a, b] = [...pointers.values()];
       const cx = (a.x + b.x) / 2;
       const cy = (a.y + b.y) / 2;
-      storyZoom.x += cx - pinch.cx;
-      storyZoom.y += cy - pinch.cy;
+      zoom.x += cx - pinch.cx;
+      zoom.y += cy - pinch.cy;
       pinch.cx = cx;
       pinch.cy = cy;
-      zoomStoryAt(pinch.scale * (Math.hypot(a.x - b.x, a.y - b.y) || 1) / pinch.dist, cx, cy);
+      zoomAt(pinch.scale * (Math.hypot(a.x - b.x, a.y - b.y) || 1) / pinch.dist, cx, cy);
     } else if (drag) {
       const point = pointers.get(event.pointerId);
-      storyZoom.x = drag.x + (point.x - drag.sx);
-      storyZoom.y = drag.y + (point.y - drag.sy);
-      applyStoryZoom();
+      zoom.x = drag.x + (point.x - drag.sx);
+      zoom.y = drag.y + (point.y - drag.sy);
+      apply();
     }
   });
   const release = (event) => {
@@ -1136,7 +1137,7 @@ function zoomStoryAt(next, px, py) {
     if (pointers.size < 2) pinch = null;
     if (pointers.size === 1) {
       const point = [...pointers.values()][0];
-      drag = { sx: point.x, sy: point.y, x: storyZoom.x, y: storyZoom.y };
+      drag = { sx: point.x, sy: point.y, x: zoom.x, y: zoom.y };
     } else if (!pointers.size) {
       drag = null;
       view.classList.remove("is-dragging");
@@ -1144,7 +1145,29 @@ function zoomStoryAt(next, px, py) {
   };
   view.addEventListener("pointerup", release);
   view.addEventListener("pointercancel", release);
-})();
+  return {
+    // 换内容时：比例保留，拖动位置归零。
+    resetPosition() { zoom.x = 0; zoom.y = 0; apply(); },
+    apply,
+    get scale() { return zoom.scale; },
+  };
+}
+
+const storyLocalZoom = elements.storyView ? createLocalZoom({
+  view: elements.storyView,
+  target: () => elements.storyView.querySelector(".story-card"),
+  storageKey: "ato-second-screen-zoom-story",
+  active: () => activeMode === "story",
+}) : null;
+const imageLocalZoom = elements.imageView ? createLocalZoom({
+  view: elements.imageView,
+  target: () => elements.imageViewImg,
+  storageKey: "ato-second-screen-zoom-image",
+  active: () => activeMode === "image",
+}) : null;
+function resetStoryZoom() {
+  storyLocalZoom?.resetPosition();
+}
 
 // 离开科技模式时卸掉内嵌页，下次进来重新加载，避免在后台一直占着内存。
 function closeTechnology() {
