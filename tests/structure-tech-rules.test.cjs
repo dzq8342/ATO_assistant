@@ -484,7 +484,7 @@ test('Mnestis Thesis advertises its effect beside the price and only nags when n
   // With an empty record the full reminder is still the only useful message.
   const empty = rules.prepareOperation({ ...ctx, heroes: { heroes: [], graveyard: [] }, actionId: 'reflect', selection: {} });
   assert.equal(empty.code, 'INVALID_TARGET');
-  assert.equal(empty.message, '请先在英雄记录表添加英雄，再选择当前在役的阿尔戈英雄。');
+  assert.equal(empty.message, '请先在阿尔戈英雄记录表添加英雄，再选择当前在役的阿尔戈英雄。');
   assert.equal(rules.prepareOperation({ ...ctx, actionId: 'reflect', selection: { targetId: 'odys' } }).ok, true);
 });
 

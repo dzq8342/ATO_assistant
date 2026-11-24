@@ -638,7 +638,7 @@
       // reminder. With heroes on file the picker already names the missing
       // choice, so the silent failure just keeps the button disabled.
       if (!target) return failure("INVALID_TARGET", heroItems(ctx).length
-        ? "" : "请先在英雄记录表添加英雄，再选择当前在役的阿尔戈英雄。");
+        ? "" : "请先在阿尔戈英雄记录表添加英雄，再选择当前在役的阿尔戈英雄。");
       targetLabel = heroTitle(target);
     }
     if (action.target?.includes("titan") || action.sacrifice) {

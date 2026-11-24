@@ -1687,7 +1687,7 @@ test('the Mnestis Thesis row reads its effect after the price and only reminds w
   await panel.ready;
   const preview = () => findNode(panel, node => node.className === 'structure-tech-action-preview').textContent;
   assert.match(preview(), /\+1 命运 · 使其获得一个回忆节点/);
-  assert.doesNotMatch(preview(), /请先在英雄记录表添加英雄|请完成选项/);
+  assert.doesNotMatch(preview(), /请先在阿尔戈英雄记录表添加英雄|请完成选项/);
   assert.equal(findNode(panel, node => node.className === 'structure-tech-action-use').disabled, true);
   // Once a legal target is chosen the price comes from the recorded payment,
   // which reads "命运 +1"; the effect summary still follows it directly.
@@ -1701,7 +1701,7 @@ test('the Mnestis Thesis row reads its effect after the price and only reminds w
   const emptyPanel = none.client.createActionPanel(none.target);
   await emptyPanel.ready;
   const emptyPreview = findNode(emptyPanel, node => node.className === 'structure-tech-action-preview').textContent;
-  assert.match(emptyPreview, /\+1 命运 · 使其获得一个回忆节点 · 请先在英雄记录表添加英雄，再选择当前在役的阿尔戈英雄。/);
+  assert.match(emptyPreview, /\+1 命运 · 使其获得一个回忆节点 · 请先在阿尔戈英雄记录表添加英雄，再选择当前在役的阿尔戈英雄。/);
 }));
 
 test('ability titles open and close the real source card in a modal without using the ability', () => withPanelDocument(async () => {
