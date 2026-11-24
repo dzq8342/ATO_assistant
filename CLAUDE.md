@@ -36,6 +36,12 @@
 ## 自用小工具
 - `tools/story-reader/`：剧情书速查（手机离线单文件网页）。用法、已做功能、用词规则和待做事项见该目录的 README.md。剧情正文和图片不进仓库。
 
+## 测试
+- 推送后 GitHub 上自动跑的「Resource import regressions」目前应当全绿；变红就是真出了问题。
+- 在仓库里直接跑 `tests/*.cjs`、`story/tests/*.cjs` 时，下面这些**一定会失败**，原因是缺资料包图片、剧情数据（`story/data/`）或要另开真实服务器，与代码无关：
+  aibp-blackbeak、aibp-panel-cards、aibp-trait-rules、apk-mobile-pages-browser、cryptic-manual、map-back-vectors、map-link-templates、map-link-vectors、map-marker-components、official-constant-box-hero-tag-terms、story-entry-deeplinks、story-thumb-sections、survey-constant-terms、trade-planner、story/tests 的 battle-aibp-links、c5-battle-boards、entity-bio-data、official-entry-index、story-marks。
+  除此之外出现的失败都要当真处理。私人版改了界面导致上游测试对不上时，改测试去匹配私人版（参考 dashboard-hub-points、dashboard-rr-goto-box 的做法），不要删测试。
+
 ## 用户试过又不要的改动
 - 横屏时放大末日卡面、灾祸计数改版这一组改动，已经全部撤销（revert）。除非用户再提，不要重做。
 

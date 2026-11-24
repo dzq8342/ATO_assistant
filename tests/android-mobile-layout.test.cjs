@@ -23,7 +23,8 @@ test('missing mobile runtime and failing handlers preserve the native back path'
 test('APK geometry uses stable system insets and publishes only its native bridge contract', () => {
   const update = activity.match(/private void updateMobileLayoutEnvironment\(\) \{[^]*?\n  \}/)[0];
   assert.match(update, /getCurrentWindowMetrics\(\)/);
-  assert.match(update, /getInsetsIgnoringVisibility\(/);
+  // 私人版全屏：系统栏隐藏后不再占位，只按当前实际可见的系统栏 / 刘海留边，所以用 getInsets。
+  assert.match(update, /getInsets(IgnoringVisibility)?\(/);
   assert.doesNotMatch(update, /Type\.ime\(|getHeight\(\)|getWindowVisibleDisplayFrame/);
   assert.match(activity, /@android\.webkit\.JavascriptInterface public String mobileLayoutEnvironment\(\)/);
   assert.match(activity, /onConfigurationChanged\(Configuration configuration\)/);

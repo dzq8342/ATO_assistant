@@ -87,11 +87,13 @@ test('派系名「独眼巨人」不会被宿敌旧名顶成「无眼巨人」',
   assert.equal(engine.translate('核心 · 独眼巨人'), '核心 · 无眼巨人');
 });
 
-test('航行时间线保留「循环纪」', () => {
+test('航行时间线用「故事集」，且不会被二次改写', () => {
+  // 私人版：Cycle 统一用官方 App 1.1.22 的「故事集」，航行时间线写作「故事集 III 航行时间线」。
   // .date-track-panel 里有一条 循环 => 循环 的同名条目，新引擎下它是空操作；
-  // 关键是被顶掉的全局「循环 => 故事集」不会再回头改写刚写好的「循环纪」。
-  assert.equal(engine.translate('Cycle III 航行时间表', ['.date-track-panel']), '循环纪 III 航行时间线');
-  assert.equal(engine.translate('循环', ['.date-track-panel']), '循环');
+  // 关键是写好的译文不会再被别的条目回头改写（例如变成「故事集纪」）。
+  assert.equal(engine.translate('Cycle III 航行时间表', ['.date-track-panel']), '故事集 III 航行时间线');
+  // 私人版：日期轨里单独的「循环」也统一成「故事集」。
+  assert.equal(engine.translate('循环', ['.date-track-panel']), '故事集');
   assert.equal(engine.translate('循环'), '故事集');
 });
 

@@ -3479,7 +3479,8 @@
     // 私人版：官方扫描图改用与主控台卡图相同的查看器（assets/image-viewer.js）；没加载到时
     // 退回原来的翻页查看器。
     // 扫描图按原始像素 100% 打开，先看页面顶部。
-    if (window.atoImageViewer) window.atoImageViewer.open(src, alt, { initial: "actual" });
+    const imageViewer = typeof window !== "undefined" ? window.atoImageViewer : null;
+    if (imageViewer) imageViewer.open(src, alt, { initial: "actual" });
     else openPageViewerImages([{ src, alt }], 0);
     button.disabled = false;
     button.classList.remove("is-loading");

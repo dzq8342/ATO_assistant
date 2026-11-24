@@ -82,6 +82,11 @@ function harness(cycle) {
     renderFlow: () => {},
     normalizeCampaignDay: String,
     recordSyncChannel: { postMessage() {} },
+    // 私人版：分支卡里会挂上「寄放」在这张卡的主线记录（如 C1 的 0014 放进宿命的迷境卡），这里没有主线记录。
+    currentMainStoryConstants: () => null,
+    ensureTodayMainStoryConstants: () => ({}),
+    createSimpleConstantRow: () => element(),
+    setMainStoryConstant() {},
   });
   const names = ['normalizeSurveyConstants', 'surveyConstantsDayKey', 'ensureTodaySurveyConstants',
     'getCurrentSurveyConstantData', 'firstCheckedSurveyHubTarget', 'firstCheckedSurveyRrTarget',
@@ -143,15 +148,17 @@ test('渲染：第一格没勾时第二格整行不出现（段号不提前剧�
       boxes: [['1', '1', 'Catch of the Day'], ['1-goto', '*', '前往 11', null, { requiresFirst: true }]],
     }, 'rr');
   };
-  const rows = (node) => node.children[1].children;
+  // 私人版：休整冒险卡只放各行（不再单独放标题），行在卡的最后一个子节点里；
+  // 每行的顺序改为「名称 数字 勾选框」。
+  const rows = (node) => node.children.at(-1).children;
   assert.equal(rows(card({})).length, 1, '未勾第一格时第二格不该渲染');
   const revealed = rows(card({ 1: true }));
   assert.equal(revealed.length, 2, '勾上第一格后第二格才出现');
   assert.equal(revealed[1].children[1].textContent, '*');
-  assert.equal(revealed[1].children[2].textContent, '前往 11');
-  assert.equal(revealed[1].children[0].disabled, undefined, '出现后应当可以点');
+  assert.equal(revealed[1].children[0].textContent, '前往 11');
+  assert.equal(revealed[1].children[2].disabled, undefined, '出现后应当可以点');
   const both = rows(card({ 1: true, '1-goto': true }));
-  assert.equal(both[1].children[0].checked, true);
+  assert.equal(both[1].children[2].checked, true);
   // 存档里只剩第二格勾着（旧数据/手改）时仍要显示，否则没法取消。
   assert.equal(rows(card({ '1-goto': true })).length, 2);
 });
@@ -172,11 +179,11 @@ test('定数框面板：默认一个「前往 xx」都不渲染，勾上循环 I
     return rrGroup.children[0].children;
   };
   const textOf = (node) => [node.textContent, ...(node.children || []).map(textOf)].join('\n');
-  const collect = (nodes) => nodes.map((card) => card.children[1].children).flat();
+  const collect = (nodes) => nodes.map((card) => card.children.at(-1).children).flat();
 
   const cards = rrCards();
   assert.equal(cards.length, 10);
-  assert.deepEqual(plain(cards.map((card) => card.children[1].children.length)), Array(10).fill(1),
+  assert.deepEqual(plain(cards.map((card) => card.children.at(-1).children.length)), Array(10).fill(1),
     '没勾任何 R&R 时不该出现第二个框');
   assert.ok(!collect(cards).some((row) => textOf(row).includes('前往')), '第二格的段号不该提前出现在面板里');
 
@@ -184,8 +191,8 @@ test('定数框面板：默认一个「前往 xx」都不渲染，勾上循环 I
     c.setSurveyConstant('rr', id, id, true);
   }
   const checkedCards = rrCards();
-  assert.deepEqual(plain(checkedCards.map((card) => card.children[1].children.length)), [2, 2, 1, 1, 1, 1, 1, 1, 2, 1]);
-  const labels = checkedCards.map((card) => card.children[1].children.map((row) => row.children[2]?.textContent));
+  assert.deepEqual(plain(checkedCards.map((card) => card.children.at(-1).children.length)), [2, 2, 1, 1, 1, 1, 1, 1, 2, 1]);
+  const labels = checkedCards.map((card) => card.children.at(-1).children.map((row) => row.children[0]?.textContent));
   assert.equal(labels[0][1], '前往 11');
   assert.equal(labels[1][1], '前往 22');
   assert.equal(labels[8][1], '前往 99');
