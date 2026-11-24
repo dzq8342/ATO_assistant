@@ -282,7 +282,7 @@
           return `<section><h2>${cycleName(cycle)}</h2>
         <div class="node-list-grid">${cycleNodes.map(node => nodeButton(node)).join('')}</div></section>`;
         }).join('')
-        : `<p class="muted">在右侧勾选某个循环的「已完成」，即可解锁该循环的始徒节点。</p>`;
+        : `<p class="muted">在右侧勾选某个${term('cycle')}的「已完成」，即可解锁该${term('cycle')}的${term('boss')}节点。</p>`;
       return;
     }
     const layout = graphLayout();
@@ -296,7 +296,7 @@
       <defs>${arrowHeads}</defs>${graphConnections(layout)}</svg>`
       + (nodes.length ? [...positions].sort((a, b) => a[1].y - b[1].y || a[1].x - b[1].x)
         .map(([id, { x, y }]) => nodeButton(rules.byId.get(id), 'graph-node', `left:${x}px;top:${y}px;width:${cardWidth}px;height:${cardHeight}px`)).join('')
-        : `<p class="muted tree-empty">在右侧勾选某个循环的「已完成」，即可解锁该循环的始徒节点。</p>`);
+        : `<p class="muted tree-empty">在右侧勾选某个${term('cycle')}的「已完成」，即可解锁该${term('cycle')}的${term('boss')}节点。</p>`);
     $('graph').classList.toggle('has-selection', positions.has(selected));
     // Cards are narrow: once level and badges have filled the meta row the status
     // word would be squeezed into an ellipsis, so drop it instead.
@@ -394,7 +394,7 @@
       }).join('') + '</div>').join('');
     const cycleChecks = cycles.map(cycle => `<label>${sheetField(`completed.${cycle}`, 'checkbox', `${cycleName(cycle)}已完成`, state.completed[cycle])}${cycleName(cycle)}</label>`).join('');
     const hiddenNote = cycles.some(cycle => !cycleUnlocked(cycle))
-      ? `<p class="muted">勾选某个循环的「已完成」，就会出现该循环的节点与${term('evolution')}。</p>` : '';
+      ? `<p class="muted">勾选某个${term('cycle')}的「已完成」，就会出现该${term('cycle')}的节点与${term('evolution')}。</p>` : '';
     $('sheet').innerHTML = `<div class="section-heading"><h2 id="sheet-title">${term('sheet')}</h2><button id="open-manual">补录战绩</button></div>
       <section class="sheet-header"><div><h3>笔记</h3>${sheetField('sheet.notes', 'textarea', '剧场笔记', record.notes, 'class="ruled"')}</div>
         <div class="cycle-checks"><h3>已完成的${term('cycle')}</h3>${cycleChecks}</div></section>
@@ -529,7 +529,7 @@
       const prerequisite = rules.byId.get(id);
       return `<li>${state.wins[id]?.normal ? '✓' : '◇'} <button data-node="${id}" data-follow>${escape(titleFor(prerequisite))}</button></li>`;
     }).join('') + (node.prerequisites.some(id => !visibleNode(rules.byId.get(id)))
-      ? '<li class="muted">还有需要在后续循环查看的前置战斗。</li>' : '');
+      ? `<li class="muted">还有需要在后续${term('cycle')}查看的前置战斗。</li>` : '');
     const nextNodes = catalog.nodes.filter(candidate => visibleNode(candidate) && candidate.prerequisites.includes(node.id));
     const nextLinks = nextNodes.map(candidate => `<li><button data-node="${candidate.id}" data-follow>${escape(titleFor(candidate))}</button></li>`).join('');
     const reward = renderReward(node, win);
@@ -575,7 +575,7 @@
     if (!battle) return;
     if (!visibleNode(battle)) {
       target.removeAttribute('data-battle-id');
-      target.innerHTML = '<p>当前循环无法继续已保存的战斗。</p>';
+      target.innerHTML = `<p>当前${term('cycle')}无法继续已保存的战斗。</p>`;
       return;
     }
     if (target.dataset.battleId === battle.id && target.childElementCount) {
@@ -645,7 +645,7 @@
     const id = globalThis.crypto.randomUUID?.() || Array.from(crypto.getRandomValues(new Uint8Array(16)), n => n.toString(16).padStart(2, '0')).join('');
     const trait = mode === 'cursed' ? Math.floor(Math.random() * 6) + 1 : null;
     void mutate(next => {
-      if (!visibleNode(target)) throw new Error('该循环尚未解锁。');
+      if (!visibleNode(target)) throw new Error(`该${term('cycle')}尚未解锁。`);
       rules.start(next, { id, boss: target.boss, level: target.level, cycle: target.cycle, mode, trait });
     })
       .then(() => { if (state.activeBattle?.id === id) $('open-battle')?.focus(); });
@@ -770,7 +770,7 @@
       const targetIndex = rules.cycles.indexOf(path[1]);
       const currentIndex = rules.cycles.indexOf(dashboardCycle);
       if (targetIndex >= 0 && currentIndex >= 0 && targetIndex > currentIndex) {
-        if (!confirm(`当前战役进度在${cycleName(dashboardCycle)}，勾选「${cycleName(path[1])}已完成」会提前解锁该循环的始徒与挑战，可能造成严重剧透。确认确实已完成这个循环吗？`)) {
+        if (!confirm(`当前战役进度在${cycleName(dashboardCycle)}，勾选「${cycleName(path[1])}已完成」会提前解锁该${term('cycle')}的${term('boss')}与挑战，可能造成严重剧透。确认确实已完成这个${term('cycle')}吗？`)) {
           input.checked = before;
           return;
         }
