@@ -2627,6 +2627,20 @@
         width: 100%;
       }
     }
+    /* 私人版：导航栏里的第二屏开关（在「幻忆剧场」右边）。开着时用主色底，一眼看出状态。 */
+    .record-links .second-screen-nav-toggle {
+      min-height: 32px;
+      padding: 0 12px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .record-links .second-screen-nav-toggle[aria-pressed="true"] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
     /* 私人版：主控台顶部空白由 40px 减到 12px。 */
     html:not(.ato-apk-portrait) #appShell.app {
       padding-top: 12px;
@@ -2859,6 +2873,7 @@
         <a class="record-card-link" href="./map/index.html" data-cycle-link><span class="nav-icon" aria-hidden="true" style="--nav-icon-w:16px;--nav-icon-h:16px;--icon-src:url(../assets/icons/map.svg?v=apk-ui-a72da92bdf63)"></span>地图</a>
         <a class="record-card-link" href="./story/index.html" data-cycle-link data-story-book-link><span class="nav-icon" aria-hidden="true" style="--nav-icon-w:16px;--nav-icon-h:16px;--icon-src:url(../assets/icons/story.svg?v=apk-ui-a72da92bdf63)"></span>故事书</a>
         <a id="theatreLink" class="record-card-link" href="./theatre/index.html" data-cycle-link hidden><span class="nav-icon" aria-hidden="true" style="--nav-icon-w:15px;--nav-icon-h:17px;--icon-src:url(../assets/icons/theatre-nav.svg?v=apk117)"></span><span data-term-variant="fan" data-language-ignore>忆识剧场</span><span data-term-variant="official" data-language-ignore hidden>幻忆剧场</span><span data-term-variant="en" data-language-ignore hidden>Mnestis Theatre</span></a>
+        <button id="secondScreenToggle" type="button" class="secondary second-screen-nav-toggle" aria-pressed="false" title="开启或关闭第二屏幕（网址和其它设置在「工具」里）" data-dashboard-readonly-allowed>第二屏 · 已关</button>
       </nav>
     </div>
 
@@ -3001,7 +3016,7 @@
             <div class="misc-setting-group">
               <div class="misc-setting-heading second-screen-heading">
                 <h3>第二屏幕</h3>
-                <button id="secondScreenToggle" type="button" class="secondary settings-toggle-button" aria-pressed="false" data-dashboard-readonly-allowed>开启</button>
+                <!-- 私人版：第二屏开关挪到导航栏「幻忆剧场」右边；这里只留网址和各项设置。 -->
               </div>
               <div class="second-screen-card">
                 <div id="secondScreenAddress" class="second-screen-address" hidden>
@@ -5049,7 +5064,7 @@
           ? (lanUrl || sameHostUrl || currentShortUrl)
           : (sameHostUrl || lanUrl || currentShortUrl);
       elements.secondScreenToggle.setAttribute("aria-pressed", String(enabled));
-      elements.secondScreenToggle.textContent = enabled ? "关闭" : "开启";
+      elements.secondScreenToggle.textContent = enabled ? "第二屏 · 已开" : "第二屏 · 已关";
       if (secondScreenEnabled !== enabled) {
         secondScreenEnabled = enabled;
         renderFlow();
@@ -5198,7 +5213,7 @@
         renderSecondScreenStatus(payload);
       } catch (error) {
         elements.secondScreenToggle.setAttribute("aria-pressed", String(!enabled));
-        elements.secondScreenToggle.textContent = enabled ? "开启" : "关闭";
+        elements.secondScreenToggle.textContent = enabled ? "第二屏 · 已关" : "第二屏 · 已开";
         elements.secondScreenHint.textContent = `第二屏幕设置失败：${String(error.message || error)}`;
       } finally {
         secondScreenBusy = false;
