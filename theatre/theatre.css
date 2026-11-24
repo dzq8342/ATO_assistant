@@ -178,3 +178,7 @@ dialog form { gap: 10px; }
 }
 @media (max-width: 390px) { .tracks { grid-template-columns: 1fr; } .hold { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 340px) { .node-list-grid { grid-template-columns: 1fr; } }
+
+/* 私人版：顶部空白和主控台一样缩小到 12px（安卓竖屏布局不变）。 */
+html:not(.ato-apk-portrait) body > main { padding-top: 12px; }
+

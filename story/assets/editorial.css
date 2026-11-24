@@ -93,9 +93,13 @@ button { font-weight: 600; }
 @media (min-width: 821px) {
   html:not(.ato-apk-portrait) body { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
   html:not(.ato-apk-portrait) body > .sidebar { height: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  /* 私人版：顶部空白和主控台一样缩小：正文区上方 24+28px → 12px，左栏上方 32px → 12px。 */
+  html:not(.ato-apk-portrait) body > .sidebar { padding-top: 12px; }
   html:not(.ato-apk-portrait) body > .reader {
+    margin-top: 0;
+    padding-top: 12px;
     box-sizing: border-box;
-    height: calc(100% - 48px);
+    height: calc(100% - 24px);
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
