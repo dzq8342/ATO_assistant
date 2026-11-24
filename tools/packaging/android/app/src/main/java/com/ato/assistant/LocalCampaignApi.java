@@ -48,10 +48,16 @@ final class LocalCampaignApi {
     try {
       JSONObject settings = loadSecondScreenSettings();
       // 用户在主控台手动关掉过第二屏：尊重这个选择，不自动打开。
-      if (!settings.optBoolean("autoOpenOnLaunch", true)) return;
+      if (!settings.optBoolean("autoOpenOnLaunch", true)) {
+        settings.put("storyTabOpen", false);
+        saveSecondScreenSettings(settings);
+        return;
+      }
       secondScreenServer.start();
       settings.put("enabled", true);
       settings.put("displayMode", "map");
+      // 刚启动时还没有剧情书标签页。
+      settings.put("storyTabOpen", false);
       settings.remove("technologyView");
       settings.remove("imageView");
       saveSecondScreenSettings(settings);
@@ -322,6 +328,16 @@ final class LocalCampaignApi {
     String requestedMode = payload.optString("mode").toLowerCase(java.util.Locale.ROOT);
     String mode = validSecondScreenMode(requestedMode) ? requestedMode : "map";
     JSONObject settings = loadSecondScreenSettings();
+    // 私人版：第二屏切换规则（与 api/campaign-state.php 一致）——默认显示地图；
+    // 剧情书标签页开着时始终回到剧情书。base = 回到底层画面（剧情书开着就是剧情书，否则地图）；
+    // release-story = 剧情书标签页关闭（正在显示剧情书就换回地图，显示别的就不动）。
+    if (payload.has("storyTabOpen")) settings.put("storyTabOpen", payload.optBoolean("storyTabOpen"));
+    if ("base".equals(requestedMode)) {
+      mode = settings.optBoolean("storyTabOpen") ? "story" : "map";
+    } else if ("release-story".equals(requestedMode)) {
+      String current = settings.optString("displayMode", "map");
+      mode = "story".equals(current) ? "map" : current;
+    }
     settings.put("displayMode", mode);
     // 私人版：科技页随模式一起报告当前看的科技树和打开的大图；没带这个字段就保持原值。
     if (payload.has("technologyView")) settings.put("technologyView", normalizeTechnologyView(payload.opt("technologyView")));

@@ -5128,9 +5128,9 @@
           ? "已开启，正在显示主控台打开的大图。"
           : payload.displayMode === "technology"
           ? "已开启，正在显示科技树（离开科技页后恢复原来的画面）。"
-          : battleBoardVisible
-            ? "已开启：新战役时显示决战版图，写入战利品后恢复地图。"
-            : "已开启：战斗中显示 AIBP 镜像与地形卡。"
+          : payload.displayMode === "aibp"
+            ? "已开启，正在显示决战版图（在始徒页取消勾选后恢复）。"
+            : "已开启：默认显示地图；打开剧情书、科技页或主控台大图时会切过去，剧情书开着时始终回到剧情书。"
         : "打开后，局域网设备可通过网址查看地图、决战版图或故事。";
       // 安卓版把整个应用都开放给局域网，且和这台手机共用登录态（可读可写，登录/退出只在本机）；
 
@@ -7423,7 +7423,7 @@
             body: JSON.stringify({ mode: "image", imageView: { src: path, title: String(alt || "") } }),
           });
           // 请求在路上时大图已经关了（而且没有换成别的图）：补一次还原。
-          if (token !== cardImageSecondScreenToken && !cardImageSecondScreenPrevious) postSecondScreenMode(restoreTo);
+          if (token !== cardImageSecondScreenToken && !cardImageSecondScreenPrevious && restoreTo) postSecondScreenMode("base");
         } catch {
           /* 第二屏没开启或网络异常时保持原样 */
         }
@@ -7436,7 +7436,8 @@
       cardImageSecondScreenToken += 1;
       const previous = cardImageSecondScreenPrevious;
       cardImageSecondScreenPrevious = "";
-      if (previous) postSecondScreenMode(previous);
+      // 私人版：回到底层画面——剧情书标签页开着就是剧情书，否则地图（由服务端判断）。
+      if (previous) postSecondScreenMode("base");
     }
     function postSecondScreenMode(mode) {
       try {

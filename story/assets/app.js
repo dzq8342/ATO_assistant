@@ -3693,7 +3693,9 @@
       const response = await fetch(secondScreenModeUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: mode === "story" ? "story" : "map" }),
+        // 私人版：顺带告诉服务端剧情书标签页是否「占着」第二屏（storyTabOpen），
+        // 科技页、大图、决战版图结束后会按它回到剧情书。手动取消勾选＝不再占着。
+        body: JSON.stringify({ mode: mode === "story" ? "story" : "map", storyTabOpen: mode === "story" }),
       });
       if (response.ok) return { ok: true, error: "" };
       const payload = await response.json().catch(() => null);
@@ -3746,12 +3748,11 @@
     await refreshSecondScreenStoryModeToggle();
   }
 
-  // 私人版：打开剧情书时第二屏自动显示剧情书；切到其他标签页时第二屏保持剧情书，
-  // 只有关闭剧情书标签页（或在本标签页离开剧情书）时才切回原来的画面
-  // （默认地图；进剧情书前正在显示 AIBP 决战版图的，就回到 AIBP）。
-  // 「第二屏显示文本」勾选框仍可手动切换。
+  // 私人版：第二屏切换规则——默认显示地图；打开剧情书时第二屏自动显示剧情书，只要剧情书
+  // 标签页没关，第二屏就一直回到剧情书（中途打开科技页、主控台大图、决战版图时临时让给它们，
+  // 它们结束后由服务端按 storyTabOpen 回到剧情书）。关闭剧情书标签页（或在本标签页离开剧情书）
+  // 时：正在显示剧情书就换回地图。「第二屏显示文本」勾选框仍可手动切换。
   let secondScreenAutoStory = false;
-  let secondScreenModeBeforeStory = "map";
   let secondScreenAutoBusy = false;
 
   async function autoShowStoryOnSecondScreen() {
@@ -3761,11 +3762,7 @@
       const response = await fetch(secondScreenStatusUrl, { cache: "no-store" });
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload?.ok || !payload.enabled || document.hidden) return;
-      if (payload.displayMode === "story") {
-        secondScreenAutoStory = true;
-        return;
-      }
-      secondScreenModeBeforeStory = payload.displayMode === "aibp" ? "aibp" : "map";
+      if (payload.displayMode === "story" && secondScreenAutoStory) return;
       scheduleSecondScreenStorySnapshot();
       const result = await setSecondScreenMode("story");
       if (result.ok) {
@@ -3788,7 +3785,7 @@
       fetch(secondScreenModeUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: secondScreenModeBeforeStory }),
+        body: JSON.stringify({ mode: "release-story", storyTabOpen: false }),
         keepalive: true,
       }).catch(() => {});
     } catch {

@@ -3564,7 +3564,8 @@
         const response = await fetch(secondScreenModeUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode: mode === "aibp" ? "aibp" : "map" }),
+          // 私人版：结束决战版图时回到底层画面——剧情书标签页开着就是剧情书，否则地图。
+          body: JSON.stringify({ mode: mode === "aibp" ? "aibp" : "base" }),
         });
         return response.ok;
       } catch {
@@ -6658,7 +6659,7 @@
       renderExtraCards();
       renderPanelTokens();
       battleMapControl?.reset();
-      void setSecondScreenMode("aibp");
+      // 私人版：开新战役时不再自动把第二屏切到决战版图（默认关闭）；需要时手动勾选「第二屏显示决战版图」。
     }
 
     function renderDeckInfo() {

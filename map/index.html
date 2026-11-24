@@ -72,7 +72,8 @@
           <input id="showGridToggle" type="checkbox">
           显示网格
         </label>
-        <label id="secondScreenMapModeLabel" class="check-label second-screen-mode-toggle" title="请先在主控制台开启第二屏幕">
+        <!-- 私人版：第二屏默认就显示地图（其它画面结束后自动回到地图或剧情书），不再需要这个开关。 -->
+        <label id="secondScreenMapModeLabel" class="check-label second-screen-mode-toggle" title="请先在主控制台开启第二屏幕" hidden style="display: none">
           <input type="checkbox" id="secondScreenMapModeToggle" disabled>
           第二屏显示地图
         </label>

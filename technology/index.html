@@ -5669,7 +5669,6 @@ function boot(appData) {
 const TECH_SECOND_SCREEN_MODE_URL = `${CAMPAIGN_STORAGE_URL}?action=second-screen-mode`;
 const TECH_SECOND_SCREEN_STATUS_URL = `${CAMPAIGN_STORAGE_URL}?action=second-screen-status`;
 var techSecondScreenOwned = false;
-var techSecondScreenPrevious = 'map';
 var techSecondScreenClaiming = false;
 var techSecondScreenLastSent = '';
 function technologySecondScreenView() {
@@ -5687,10 +5686,6 @@ async function claimTechnologySecondScreen() {
     const response = await fetch(TECH_SECOND_SCREEN_STATUS_URL, { cache: 'no-store' });
     const payload = await response.json().catch(() => null);
     if (!response.ok || !payload?.ok || !payload.enabled || document.hidden) return;
-    if (!techSecondScreenOwned) {
-      const mode = String(payload.displayMode || 'map');
-      techSecondScreenPrevious = ['map', 'aibp', 'story', 'blank'].includes(mode) ? mode : 'map';
-    }
     techSecondScreenOwned = true;
     techSecondScreenLastSent = '';
     await pushTechnologySecondScreenView();
@@ -5726,7 +5721,8 @@ function releaseTechnologySecondScreen() {
     fetch(TECH_SECOND_SCREEN_MODE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: techSecondScreenPrevious, technologyView: { page: '', nodeId: '' } }),
+      // 私人版：回到底层画面——剧情书标签页开着就是剧情书，否则地图（由服务端判断）。
+      body: JSON.stringify({ mode: 'base', technologyView: { page: '', nodeId: '' } }),
       keepalive: true,
     }).catch(() => {});
   } catch {

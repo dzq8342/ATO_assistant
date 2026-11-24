@@ -996,7 +996,16 @@ if ($action === 'second-screen-mode') {
   $payload = json_decode((string) $raw, true);
   if (!is_array($payload)) respond(400, ['ok' => false, 'error' => 'Request body must be JSON.']);
   $mode = strtolower(trim((string) ($payload['mode'] ?? '')));
-  $mode = in_array($mode, ['aibp', 'story', 'blank', 'technology', 'image'], true) ? $mode : 'map';
+  // 私人版：第二屏切换规则——默认显示地图；剧情书标签页开着时始终回到剧情书。
+  //   base：「回到底层画面」，剧情书标签页开着就是剧情书，否则地图（科技页离开、大图关闭、
+  //         决战版图结束时用）。
+  //   release-story：剧情书标签页关闭：正在显示剧情书就换回地图，正在显示别的（科技、大图）就不动。
+  // storyTabOpen（可选）记下剧情书标签页是否开着。
+  $requestedMode = $mode;
+  if (!in_array($mode, ['base', 'release-story'], true)) {
+    $mode = in_array($mode, ['aibp', 'story', 'blank', 'technology', 'image'], true) ? $mode : 'map';
+  }
+  $storyTabOpen = array_key_exists('storyTabOpen', $payload) ? !empty($payload['storyTabOpen']) : null;
   // 私人版：主控台点开大图时连同图片路径一起发过来；没带这个字段就保持原值。
   $imageView = array_key_exists('imageView', $payload) ? normalize_image_view($payload['imageView']) : null;
   // 私人版：科技页随模式一起报告当前看的科技树和打开的大图；没带这个字段就保持原值。
@@ -1017,6 +1026,17 @@ if ($action === 'second-screen-mode') {
   foreach ($store['screens'] as $token => $entry) {
     if (($entry['userId'] ?? null) !== $user['id']) continue;
     $matched = true;
+    if ($storyTabOpen !== null && !empty($entry['storyTabOpen']) !== $storyTabOpen) {
+      $store['screens'][$token]['storyTabOpen'] = $storyTabOpen;
+      $entry['storyTabOpen'] = $storyTabOpen;
+      $changed = true;
+    }
+    if ($requestedMode === 'base') {
+      $mode = !empty($entry['storyTabOpen']) ? 'story' : 'map';
+    } elseif ($requestedMode === 'release-story') {
+      $current = (string) ($entry['displayMode'] ?? 'map');
+      $mode = $current === 'story' ? 'map' : $current;
+    }
     if (($entry['displayMode'] ?? 'map') !== $mode) {
       $store['screens'][$token]['displayMode'] = $mode;
       $store['screens'][$token]['modeChangedAt'] = gmdate('c');
