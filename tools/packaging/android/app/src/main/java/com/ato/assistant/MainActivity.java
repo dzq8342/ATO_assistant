@@ -101,6 +101,12 @@ public final class MainActivity extends Activity {
     localApi.attachImageIndex(atopackStore::aibpImageIndex);
     secondScreenServer = new LocalSecondScreenServer(this, atopackStore, localApi);
     localApi.attachSecondScreenServer(secondScreenServer);
+    // 私人版：第二屏常驻通知栏（锁屏后仍可使用）需要通知权限；安卓 13 起要先问一次。
+    // 不给也照样能用，只是通知栏里看不到「第二屏运行中」。
+    if (android.os.Build.VERSION.SDK_INT >= 33
+        && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+      requestPermissions(new String[] {"android.permission.POST_NOTIFICATIONS"}, 4207);
+    }
     // 私人版：启动 App 时默认开启第二屏并显示地图（开网络端口放到后台线程，不卡启动画面）。
     final LocalCampaignApi launchApi = localApi;
     new Thread(launchApi::openSecondScreenOnLaunch, "ato-second-screen-launch").start();

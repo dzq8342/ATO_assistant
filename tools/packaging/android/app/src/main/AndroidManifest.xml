@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <uses-permission android:name="android.permission.INTERNET" />
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <!-- 私人版：锁屏后第二屏仍可使用（SecondScreenKeepAliveService：前台服务 + CPU/Wi-Fi 唤醒锁）。 -->
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
   <queries>
     <intent>
       <action android:name="android.intent.action.TTS_SERVICE" />
@@ -23,6 +28,14 @@
       android:authorities="${applicationId}.note-camera"
       android:exported="false"
       android:grantUriPermissions="true" />
+    <service
+      android:name=".SecondScreenKeepAliveService"
+      android:exported="false"
+      android:foregroundServiceType="specialUse">
+      <property
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="Keeps the local-network second-screen server reachable while the screen is locked." />
+    </service>
     <activity
       android:name=".MainActivity"
       android:configChanges="keyboardHidden|orientation|screenSize"

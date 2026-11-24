@@ -89,6 +89,8 @@ final class LocalSecondScreenServer {
       serverSocket = next;
       executor = Executors.newCachedThreadPool();
       executor.execute(this::acceptLoop);
+      // 私人版：第二屏开着时常驻前台服务，锁屏后局域网服务照常响应。
+      SecondScreenKeepAliveService.start(context);
       return urls();
     }
   }
@@ -106,6 +108,7 @@ final class LocalSecondScreenServer {
   }
 
   void stop() {
+    SecondScreenKeepAliveService.stop(context);
     backupHttp.clear();
     synchronized (lock) {
       if (serverSocket != null) {
