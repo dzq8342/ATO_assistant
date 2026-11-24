@@ -343,6 +343,7 @@ function openBlank() {
 
 function openMap() {
   mixedMediaRuntime()?.close?.();
+  const reopened = activeMode !== "map";
   activeMode = "map";
   elements.unavailableView.hidden = true;
   elements.storyView.hidden = true;
@@ -351,6 +352,8 @@ function openMap() {
   if (typeof closeImageView === 'function') closeImageView();
   elements.mapStage.hidden = false;
   if (!elements.mapFrame.getAttribute("src")) elements.mapFrame.src = "../map/index.html?second=1";
+  // 私人版：每次切回地图都缩放到整张地图放进一屏（刚加载的地图页自己会这样做）。
+  else if (reopened) elements.mapFrame.contentWindow?.postMessage({ type: "ato-second-screen-fit" }, window.location.origin);
 }
 
 // 官方故事书扫描图只认本站 story 数据目录下的图片，其它来源一律忽略。
@@ -446,6 +449,8 @@ function openStory(screen) {
   if (typeof closeTechnology === 'function') closeTechnology();
   if (typeof closeImageView === 'function') closeImageView();
   elements.storyView.hidden = false;
+  // 私人版：每次切到剧情书都还原成一屏显示全（不放大、不偏移）。
+  if (previousMode !== "story" && typeof resetStoryZoom === "function") resetStoryZoom();
   // 官方版是「只看扫描图」，但该条目没有对应扫描图时必须退回正文：
   // 只按 story.imagesOnly 走图，第二屏会只剩标题、正文一片空白。
   const scans = storyScanImages(story);
@@ -456,7 +461,7 @@ function openStory(screen) {
   if (!hasStorySnapshot(story) && storyRendered) return;
   if (renderKey === storyRenderKey && previousMode === "story") return;
   storyRenderKey = renderKey;
-  // 换了一段剧情就还原本机的缩放和拖动。
+  // 换了一段剧情也还原成一屏显示全。
   if (typeof resetStoryZoom === "function") resetStoryZoom();
   const mixedGeneration = ++mixedStoryGeneration;
   mixedMediaRuntime()?.dispose?.(elements.storyBody);
@@ -1039,7 +1044,7 @@ function openImageView(screen) {
   const url = new URL("../" + src.split("/").map(encodeURIComponent).join("/"), document.baseURI).href;
   if (elements.imageViewImg.getAttribute("src") !== url) {
     elements.imageViewImg.setAttribute("src", url);
-    imageLocalZoom?.resetPosition();
+    imageLocalZoom?.reset();
   }
   elements.imageViewImg.alt = String(view.title || "");
   elements.imageViewTitle.textContent = String(view.title || "");
@@ -1054,17 +1059,10 @@ function closeImageView() {
 
 // 私人版：第二屏的剧情书和主控台大图可以在本机缩放和拖动（和地图一样）：滚轮以鼠标位置
 // 为中心缩放，按住左键拖动移动；触屏上单指拖动、双指捏合缩放。只在这台设备上生效，不影响主机。
-// 剧情书、大图、地图、科技树各记各的比例（localStorage），下次打开时沿用上次的比例；
-// 换一段剧情或换一张图时只把拖动位置归零，比例保留。
-function createLocalZoom({ view, target, storageKey, active, minScale = 0.5, maxScale = 5 }) {
+// 每次打开（切到这个画面、换一段剧情或换一张图）都回到 100%：剧情书按整屏排版、大图整张放进屏幕，
+// 也就是一屏显示全；之后的缩放只在这次查看中有效，不再记住。
+function createLocalZoom({ view, target, active, minScale = 0.5, maxScale = 5 }) {
   const zoom = { scale: 1, x: 0, y: 0 };
-  try {
-    const saved = Number(window.localStorage.getItem(storageKey));
-    if (Number.isFinite(saved) && saved >= minScale && saved <= maxScale) zoom.scale = saved;
-  } catch (_) { /* 浏览器不让存时从 100% 开始 */ }
-  const save = () => {
-    try { window.localStorage.setItem(storageKey, String(zoom.scale)); } catch (_) { /* ignore */ }
-  };
   const apply = () => {
     const element = target();
     if (!element) return;
@@ -1081,7 +1079,6 @@ function createLocalZoom({ view, target, storageKey, active, minScale = 0.5, max
     zoom.scale = Math.abs(scale - 1) < 0.02 ? 1 : scale;
     if (zoom.scale === 1 && Math.abs(zoom.x) < 1 && Math.abs(zoom.y) < 1) { zoom.x = 0; zoom.y = 0; }
     apply();
-    save();
   };
   const local = (event) => {
     const rect = view.getBoundingClientRect();
@@ -1146,8 +1143,8 @@ function createLocalZoom({ view, target, storageKey, active, minScale = 0.5, max
   view.addEventListener("pointerup", release);
   view.addEventListener("pointercancel", release);
   return {
-    // 换内容时：比例保留，拖动位置归零。
-    resetPosition() { zoom.x = 0; zoom.y = 0; apply(); },
+    // 打开时：回到一屏显示全。
+    reset() { zoom.scale = 1; zoom.x = 0; zoom.y = 0; apply(); },
     apply,
     get scale() { return zoom.scale; },
   };
@@ -1156,17 +1153,15 @@ function createLocalZoom({ view, target, storageKey, active, minScale = 0.5, max
 const storyLocalZoom = elements.storyView ? createLocalZoom({
   view: elements.storyView,
   target: () => elements.storyView.querySelector(".story-card"),
-  storageKey: "ato-second-screen-zoom-story",
   active: () => activeMode === "story",
 }) : null;
 const imageLocalZoom = elements.imageView ? createLocalZoom({
   view: elements.imageView,
   target: () => elements.imageViewImg,
-  storageKey: "ato-second-screen-zoom-image",
   active: () => activeMode === "image",
 }) : null;
 function resetStoryZoom() {
-  storyLocalZoom?.resetPosition();
+  storyLocalZoom?.reset();
 }
 
 // 离开科技模式时卸掉内嵌页，下次进来重新加载，避免在后台一直占着内存。

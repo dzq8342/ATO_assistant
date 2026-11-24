@@ -5,17 +5,9 @@ const campaignDashboardUrl = `${campaignStorageUrl}?section=dashboard`;
 const mapData = window.ATO_MAP_DATA || { cycles: [] };
 const mapTagData = window.ATO_MAP_TILE_TAGS || { tagDefinitions: [], tiles: {} };
 const secondScreenMode = new URLSearchParams(window.location.search).get("second") === "1";
-// 私人版：第二屏双指缩放后的本机比例（见文件末尾的手势缩放）；null 表示跟随主控台。
-// 记在第二屏这台设备上（localStorage），下次打开第二屏地图时沿用上次的比例；
-// 剧情书、科技树、大图各记各的。
-const SECOND_SCREEN_MAP_ZOOM_KEY = "ato-second-screen-zoom-map";
+// 私人版：第二屏手动缩放后的本机比例（见文件末尾的手势缩放）；null 表示「一屏显示全」：
+// 自动缩放到整张地图刚好放进屏幕并居中。每次打开第二屏地图都从一屏显示全开始。
 let secondScreenLocalZoom = null;
-if (secondScreenMode) {
-  try {
-    const saved = Number(window.localStorage.getItem(SECOND_SCREEN_MAP_ZOOM_KEY));
-    if (Number.isFinite(saved) && saved >= 50 && saved <= 410) secondScreenLocalZoom = saved;
-  } catch (_) { /* 浏览器不让存时就跟随主控台 */ }
-}
 const cycleIds = mapData.cycles.map((cycle) => cycle.id);
 const c1AlternateTileAssets = Object.fromEntries(
   ["009", "013", "014", "018", "022", "023", "035"].map((id) => [id, {
@@ -1205,6 +1197,7 @@ async function loadSecondScreenMapState() {
       mapZoom: secondScreenLocalZoom ?? mapDisplayScale,
       cycles: { [screen.cycleId]: screen.map || {} },
     });
+    if (secondScreenLocalZoom === null) state.mapZoom = secondScreenFitZoom();
     if (focusMap) focusArgoAfterNextRender(6);
     render();
     window.parent.postMessage({
@@ -1714,9 +1707,38 @@ function scheduleArgoFocus() {
   });
 }
 
+// 私人版：第二屏「一屏显示全」的比例：整张地图（按当前故事集的版图长宽比）刚好放进屏幕，四周留一点边。
+function secondScreenFitZoom() {
+  const viewport = elements.tileGridViewport;
+  const width = viewport?.clientWidth || window.innerWidth;
+  const height = viewport?.clientHeight || window.innerHeight;
+  const layout = displayLayout(activeCycle());
+  if (!width || !height || !layout?.width || !layout?.height) return 100;
+  return Math.max(10, Math.min(100, 100 * (height * layout.width) / (layout.height * width)) * 0.97);
+}
+
+// 按一屏显示全的比例摆好地图并居中（窗口大小变了也重新算）。
+function fitSecondScreenMap() {
+  const viewport = elements.tileGridViewport;
+  if (!viewport) return;
+  const zoom = secondScreenFitZoom();
+  if (Math.abs(zoom - state.mapZoom) > 0.01) {
+    state.mapZoom = zoom;
+    elements.tileGrid.style.setProperty("--map-zoom", `${zoom}%`);
+  }
+  const gridRect = elements.tileGrid.getBoundingClientRect();
+  const viewRect = viewport.getBoundingClientRect();
+  viewport.scrollLeft += gridRect.left + gridRect.width / 2 - (viewRect.left + viewport.clientWidth / 2);
+  viewport.scrollTop += gridRect.top + gridRect.height / 2 - (viewRect.top + viewport.clientHeight / 2);
+}
+
 function scrollArgoIntoView(generation) {
   if (generation !== argoFocusGeneration) return;
   if (secondScreenMode && secondScreenManualScroll) return;
+  if (secondScreenMode && secondScreenLocalZoom === null) {
+    fitSecondScreenMap();
+    return;
+  }
   const targetTileId = argoTileId();
   const currentTile = elements.tileGrid.querySelector(".tile-card.current")
     || [...elements.tileGrid.querySelectorAll(".tile-card[data-id]")].find((tile) => tile.dataset.id === targetTileId);
@@ -2590,10 +2612,7 @@ if (elements.tileGridViewport) {
       zoomViewportTo(normalized, rect.width / 2, rect.height / 2);
     }
     liveZoom = normalized;
-    if (secondScreenMode) {
-      secondScreenLocalZoom = normalized;
-      try { window.localStorage.setItem(SECOND_SCREEN_MAP_ZOOM_KEY, String(normalized)); } catch (_) { /* ignore */ }
-    }
+    if (secondScreenMode) secondScreenLocalZoom = normalized;
     if (state.mapZoom === normalized) return;
     state.mapZoom = normalized;
     saveState();
@@ -2803,6 +2822,15 @@ if (secondScreenMode && elements.tileGridViewport) {
     elements.tileGridViewport.addEventListener(type, allowManualScroll, { passive: true });
   }
   elements.tileGridViewport.tabIndex = 0;
+  // 第二屏页面从别的画面切回地图时：放弃上次手动的缩放和位置，回到一屏显示全。
+  window.addEventListener("message", (event) => {
+    if (event.origin !== window.location.origin || event.source !== window.parent) return;
+    if (event.data?.type !== "ato-second-screen-fit") return;
+    secondScreenLocalZoom = null;
+    secondScreenManualScroll = false;
+    argoFocusGeneration += 1;
+    scheduleArgoFocus();
+  });
 }
 
 window.ATO_MAP_ARTWORK?.bind(elements.tileGrid);
