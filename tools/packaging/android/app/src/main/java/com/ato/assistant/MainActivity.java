@@ -260,6 +260,12 @@ public final class MainActivity extends Activity {
     }
   }
 
+  // 私人版：回到 App 时，如果第二屏开着而保持唤醒已因 30 分钟没人连而停下，重新开起来。
+  @Override protected void onResume() {
+    super.onResume();
+    if (secondScreenServer != null && secondScreenServer.isRunning()) SecondScreenKeepAliveService.start(this);
+  }
+
   @Override public void onWindowFocusChanged(boolean hasFocus) {
     super.onWindowFocusChanged(hasFocus);
     if (hasFocus) enterFullscreen();

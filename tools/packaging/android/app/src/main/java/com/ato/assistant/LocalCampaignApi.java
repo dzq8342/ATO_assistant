@@ -47,6 +47,8 @@ final class LocalCampaignApi {
     if (currentUser.isEmpty() || secondScreenServer == null) return;
     try {
       JSONObject settings = loadSecondScreenSettings();
+      // 用户在主控台手动关掉过第二屏：尊重这个选择，不自动打开。
+      if (!settings.optBoolean("autoOpenOnLaunch", true)) return;
       secondScreenServer.start();
       settings.put("enabled", true);
       settings.put("displayMode", "map");
@@ -265,7 +267,12 @@ final class LocalCampaignApi {
     JSONObject settings = loadSecondScreenSettings();
     if ("POST".equalsIgnoreCase(method)) {
       JSONObject payload = requestBody.isEmpty() ? new JSONObject() : new JSONObject(requestBody);
-      settings.put("enabled", payload.optBoolean("enabled", false));
+      boolean requestedEnabled = payload.optBoolean("enabled", false);
+      // 私人版：记住手动开关。手动关掉后，下次启动 App 不再自动开启；手动打开后恢复自动开启。
+      if (payload.has("enabled") && requestedEnabled != settings.optBoolean("enabled")) {
+        settings.put("autoOpenOnLaunch", requestedEnabled);
+      }
+      settings.put("enabled", requestedEnabled);
       JSONObject scales = settings.getJSONObject("displayScales");
       JSONObject requestedScales = payload.optJSONObject("displayScales");
       if (requestedScales != null) {
