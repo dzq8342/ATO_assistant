@@ -13,7 +13,7 @@ const theatreArsenal = require('../theatre/arsenal.js');
 
 test('dashboard lists Theatre last and shows it at knowledge 20 or with the unlocked technology', () => {
   const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
-  assert.match(html, /href="\.\/story\/index\.html"[^]*?<a id="theatreLink"[^>]* hidden>[^]*?<\/a>\s*(?:<button id="secondScreenToggle"[^>]*>[^<]*<\/button>\s*)?<\/nav>/);
+  assert.match(html, /href="\.\/story\/index\.html"[^]*?<a id="theatreLink"[^>]* hidden>[^]*?<\/a>\s*<\/nav>/);
   const link = { hidden: true };
   const context = vm.createContext({ document: { getElementById: () => link }, sessionUser: {},
     state: { cardTracks: { inwardOdyssey: { position: 19 } } }, getStructureTechContext: () => null });

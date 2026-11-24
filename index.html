@@ -2627,15 +2627,17 @@
         width: 100%;
       }
     }
-    /* 私人版：导航栏里的第二屏开关（在「幻忆剧场」右边）。开着时用主色底，一眼看出状态。 */
-    .record-links .second-screen-nav-toggle {
-      min-height: 32px;
+    /* 私人版：导航栏右侧的第二屏开关（在「工具」左边）。开着时用主色底，一眼看出状态。 */
+    .dashboard-navigation .second-screen-nav-toggle {
+      margin-left: auto;
+      min-height: 36px;
       padding: 0 12px;
       font-size: 13px;
       white-space: nowrap;
     }
 
-    .record-links .second-screen-nav-toggle[aria-pressed="true"] {
+    #appShell .dashboard-navigation .second-screen-nav-toggle[aria-pressed="true"],
+    #appShell .dashboard-navigation .second-screen-nav-toggle[aria-pressed="true"]:hover {
       background: var(--accent);
       border-color: var(--accent);
       color: #fff;
@@ -2873,8 +2875,9 @@
         <a class="record-card-link" href="./map/index.html" data-cycle-link><span class="nav-icon" aria-hidden="true" style="--nav-icon-w:16px;--nav-icon-h:16px;--icon-src:url(../assets/icons/map.svg?v=apk-ui-a72da92bdf63)"></span>地图</a>
         <a class="record-card-link" href="./story/index.html" data-cycle-link data-story-book-link><span class="nav-icon" aria-hidden="true" style="--nav-icon-w:16px;--nav-icon-h:16px;--icon-src:url(../assets/icons/story.svg?v=apk-ui-a72da92bdf63)"></span>故事书</a>
         <a id="theatreLink" class="record-card-link" href="./theatre/index.html" data-cycle-link hidden><span class="nav-icon" aria-hidden="true" style="--nav-icon-w:15px;--nav-icon-h:17px;--icon-src:url(../assets/icons/theatre-nav.svg?v=apk117)"></span><span data-term-variant="fan" data-language-ignore>忆识剧场</span><span data-term-variant="official" data-language-ignore hidden>幻忆剧场</span><span data-term-variant="en" data-language-ignore hidden>Mnestis Theatre</span></a>
-        <button id="secondScreenToggle" type="button" class="secondary second-screen-nav-toggle" aria-pressed="false" title="开启或关闭第二屏幕（网址和其它设置在「工具」里）" data-dashboard-readonly-allowed>第二屏 · 已关</button>
       </nav>
+      <!-- 私人版：第二屏开关放在导航栏右侧、「工具」按钮左边（「工具」由脚本追加在它后面）。 -->
+      <button id="secondScreenToggle" type="button" class="secondary second-screen-nav-toggle" aria-pressed="false" title="开启或关闭第二屏幕（网址和其它设置在「工具」里）" data-dashboard-readonly-allowed>第二屏 · 已关</button>
     </div>
 
     <section id="dashboardWriterNotice" class="dashboard-writer-notice" role="status" aria-live="polite" hidden>
