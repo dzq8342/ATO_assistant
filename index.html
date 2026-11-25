@@ -2688,9 +2688,28 @@
         flex: 0 0 auto;
       }
 
-      /* 今日流程和日期轨往上顶到导航栏下沿，栏高随之增加。 */
+      /* 今日流程和日期轨往上顶到导航栏下沿，栏高随之增加。
+         导航栏不换行：链接多（例如显示幻忆剧场）或屏幕稍窄时，先缩小链接之间的间距，
+         保证「第二屏」和「工具」始终和链接在同一行。 */
       html:not(.ato-apk-portrait) #appShell .dashboard-navigation {
         margin-bottom: 0;
+        flex-wrap: nowrap;
+        column-gap: 16px;
+      }
+
+      html:not(.ato-apk-portrait) #appShell .dashboard-navigation > .record-links {
+        flex: 0 1 auto;
+        min-width: 0;
+        flex-wrap: nowrap;
+        column-gap: clamp(8px, calc(7vw - 62px), 30px);
+      }
+
+      html:not(.ato-apk-portrait) #appShell .dashboard-navigation > .record-links > * {
+        flex-shrink: 0;
+      }
+
+      html:not(.ato-apk-portrait) #appShell .dashboard-navigation > button {
+        flex-shrink: 0;
       }
 
       html:not(.ato-apk-portrait) #appShell.app > .grid {
