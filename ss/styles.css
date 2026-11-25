@@ -1218,7 +1218,10 @@ h1 {
 
 /* 私人版：第二屏的剧情书可以本机缩放、拖动（脚本见 app.js 的 attachStoryZoom）。
    手势全部交给脚本处理；拖动时鼠标是抓手。 */
-#storyView, #imageView { touch-action: none; cursor: grab; }
+/* 私人版：剧情书和大图里的触摸都交给本页的缩放拖动处理。正文本身是可滚动区域，
+   要单独设置，否则浏览器会接管手势，把整个第二屏页面（连同下面的地图）放大或挪动。 */
+#storyView, #storyView *, #imageView, #imageView * { touch-action: none; }
+#storyView, #imageView { cursor: grab; }
 #storyView.is-dragging, #imageView.is-dragging { cursor: grabbing; user-select: none; }
 #storyView.local-zoomed, #imageView.local-zoomed { overflow: hidden !important; }
 
