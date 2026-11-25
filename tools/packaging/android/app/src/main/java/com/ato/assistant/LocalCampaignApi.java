@@ -386,6 +386,10 @@ final class LocalCampaignApi {
 
     JSONObject screen = new JSONObject();
     screen.put("profileName", profile.optString("name", "阿尔戈号"));
+    // 私人版：第二屏那台设备跟随主控台的界面语言（民间翻译 / 官方翻译 / English）。
+    String termLanguage = profile.optString("termLanguage", "fan");
+    if (!"official".equals(termLanguage) && !"en".equals(termLanguage)) termLanguage = "fan";
+    screen.put("termLanguage", termLanguage);
     screen.put("cycleId", cycleId);
     screen.put("day", dashboardState.has("day") ? dashboardState.opt("day") : 0);
     screen.put("map", mapCycle);

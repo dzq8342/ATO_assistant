@@ -367,6 +367,8 @@ function public_second_screen_payload(array $campaign, array $screenEntry = []):
 
   return [
     'profileName' => (string) ($profile['name'] ?? '阿尔戈号'),
+    // 私人版：第二屏那台设备跟随主控台的界面语言（民间翻译 / 官方翻译 / English）。
+    'termLanguage' => in_array($profile['termLanguage'] ?? '', ['fan', 'official', 'en'], true) ? $profile['termLanguage'] : 'fan',
     'cycleId' => $cycleId,
     'day' => $dashboardCycle['day'] ?? 0,
     'map' => $mapCycle,

@@ -5753,6 +5753,9 @@ function startTechnologySecondScreenView() {
   window.parent?.postMessage({ type: 'ato-second-screen-technology-ready' }, window.location.origin);
 }
 function applyTechnologySecondScreen(screen) {
+  // 私人版：界面语言跟随主控台（官方翻译时科技名称等按官方用词显示）。
+  if (['fan', 'official', 'en'].includes(screen.termLanguage) && window.ATO_LANGUAGE
+    && window.ATO_LANGUAGE.get() !== screen.termLanguage) window.ATO_LANGUAGE.set(screen.termLanguage, false);
   const technology = isPlainObject(screen.technology) ? screen.technology : {};
   const view = isPlainObject(screen.technologyView) ? screen.technologyView : {};
   const dataKey = JSON.stringify([screen.technologyRevision || 0, technology, screen.cycleId || '']);

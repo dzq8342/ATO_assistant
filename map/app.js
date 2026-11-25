@@ -1187,6 +1187,9 @@ async function loadSecondScreenMapState() {
       return;
     }
     const screen = payload.screen || {};
+    // 私人版：界面语言跟随主控台。
+    if (["fan", "official", "en"].includes(screen.termLanguage) && window.ATO_LANGUAGE
+      && window.ATO_LANGUAGE.get() !== screen.termLanguage) window.ATO_LANGUAGE.set(screen.termLanguage, false);
     const mapDisplayScale = screen.displayScales?.map || screen.displayScale || 100;
     const fingerprint = JSON.stringify([screen.cycleId, screen.mapRevision, screen.dashboardRevision, mapDisplayScale, screen.map, screen.mapDisplay]);
     if (fingerprint === secondScreenFingerprint) return;

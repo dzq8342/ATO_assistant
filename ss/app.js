@@ -1010,6 +1010,7 @@ function openTechnology(screen) {
   latestTechnologyScreen = {
     profileName: screen.profileName,
     cycleId: screen.cycleId,
+    termLanguage: screen.termLanguage,
     technology: screen.technology || {},
     technologyView: screen.technologyView || {},
     technologyRevision: screen.technologyRevision || 0,
@@ -1174,6 +1175,14 @@ function closeTechnology() {
   technologyFrameReady = false;
 }
 
+// 私人版：第二屏是另一台设备上的网页，界面语言本来按那台设备自己的设置（默认民间翻译）。
+// 改成跟随主控台：每次轮询按主控台的设置切换，不写进这台设备的存储。
+function applySecondScreenLanguage(screen) {
+  const language = screen?.termLanguage;
+  if (!["fan", "official", "en"].includes(language) || !window.ATO_LANGUAGE) return;
+  if (window.ATO_LANGUAGE.get() !== language) window.ATO_LANGUAGE.set(language, false);
+}
+
 async function checkConnection() {
   window.clearTimeout(retryTimer);
   try {
@@ -1184,6 +1193,7 @@ async function checkConnection() {
       return;
     }
     applySecondScreenTheme(payload.screen);
+    applySecondScreenLanguage(payload.screen);
     if (payload.screen.displayMode === "aibp") openBattle(payload.screen);
     else if (payload.screen.displayMode === "story") openStory(payload.screen);
     else if (payload.screen.displayMode === "blank") openBlank();
