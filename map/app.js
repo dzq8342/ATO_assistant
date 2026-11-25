@@ -6,7 +6,8 @@ const mapData = window.ATO_MAP_DATA || { cycles: [] };
 const mapTagData = window.ATO_MAP_TILE_TAGS || { tagDefinitions: [], tiles: {} };
 const secondScreenMode = new URLSearchParams(window.location.search).get("second") === "1";
 // 私人版：第二屏手动缩放后的本机比例（见文件末尾的手势缩放）；null 表示「一屏显示全」：
-// 自动缩放到整张地图刚好放进屏幕并居中。每次打开第二屏地图都从一屏显示全开始。
+// 自动缩放到整张地图刚好放进屏幕并居中。第二屏页面打开时从一屏显示全开始；之后切到剧情书、
+// 科技树、大图再回来，地图一直留在下面，保持离开时的缩放和位置。
 let secondScreenLocalZoom = null;
 const cycleIds = mapData.cycles.map((cycle) => cycle.id);
 const c1AlternateTileAssets = Object.fromEntries(
@@ -2822,15 +2823,6 @@ if (secondScreenMode && elements.tileGridViewport) {
     elements.tileGridViewport.addEventListener(type, allowManualScroll, { passive: true });
   }
   elements.tileGridViewport.tabIndex = 0;
-  // 第二屏页面从别的画面切回地图时：放弃上次手动的缩放和位置，回到一屏显示全。
-  window.addEventListener("message", (event) => {
-    if (event.origin !== window.location.origin || event.source !== window.parent) return;
-    if (event.data?.type !== "ato-second-screen-fit") return;
-    secondScreenLocalZoom = null;
-    secondScreenManualScroll = false;
-    argoFocusGeneration += 1;
-    scheduleArgoFocus();
-  });
 }
 
 window.ATO_MAP_ARTWORK?.bind(elements.tileGrid);

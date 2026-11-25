@@ -336,14 +336,12 @@ function openBlank() {
   elements.mapStage.hidden = true;
   elements.storyView.hidden = true;
   elements.battleView.hidden = true;
-  elements.mapFrame.removeAttribute("src");
   if (typeof closeTechnology === 'function') closeTechnology();
   if (typeof closeImageView === 'function') closeImageView();
 }
 
 function openMap() {
   mixedMediaRuntime()?.close?.();
-  const reopened = activeMode !== "map";
   activeMode = "map";
   elements.unavailableView.hidden = true;
   elements.storyView.hidden = true;
@@ -352,8 +350,14 @@ function openMap() {
   if (typeof closeImageView === 'function') closeImageView();
   elements.mapStage.hidden = false;
   if (!elements.mapFrame.getAttribute("src")) elements.mapFrame.src = "../map/index.html?second=1";
-  // 私人版：每次切回地图都缩放到整张地图放进一屏（刚加载的地图页自己会这样做）。
-  else if (reopened) elements.mapFrame.contentWindow?.postMessage({ type: "ato-second-screen-fit" }, window.location.origin);
+}
+
+// 私人版：剧情书、科技树、大图都盖在地图上面显示（各自铺满整屏、不透明），地图留在最底层不卸载、
+// 也不隐藏，所以回到地图时不用重新加载图片，缩放和位置也保持离开时的样子。
+// 上面这几层各自缩放拖动，互不影响。没加载过地图时顺手加载，回来时就是现成的。
+function keepMapUnderneath() {
+  elements.mapStage.hidden = false;
+  if (!elements.mapFrame.getAttribute("src")) elements.mapFrame.src = "../map/index.html?second=1";
 }
 
 // 官方故事书扫描图只认本站 story 数据目录下的图片，其它来源一律忽略。
@@ -444,7 +448,7 @@ function openStory(screen) {
     ? screen.story
     : {};
   elements.unavailableView.hidden = true;
-  elements.mapStage.hidden = true;
+  if (typeof keepMapUnderneath === "function") keepMapUnderneath();
   elements.battleView.hidden = true;
   if (typeof closeTechnology === 'function') closeTechnology();
   if (typeof closeImageView === 'function') closeImageView();
@@ -1011,10 +1015,9 @@ function openTechnology(screen) {
     technologyRevision: screen.technologyRevision || 0,
   };
   elements.unavailableView.hidden = true;
-  elements.mapStage.hidden = true;
+  if (typeof keepMapUnderneath === "function") keepMapUnderneath();
   elements.storyView.hidden = true;
   elements.battleView.hidden = true;
-  elements.mapFrame.removeAttribute("src");
   closeImageView();
   elements.technologyView.hidden = false;
   if (!elements.technologyFrame.getAttribute("src")) {
@@ -1036,10 +1039,9 @@ function openImageView(screen) {
   }
   activeMode = "image";
   elements.unavailableView.hidden = true;
-  elements.mapStage.hidden = true;
+  if (typeof keepMapUnderneath === "function") keepMapUnderneath();
   elements.storyView.hidden = true;
   elements.battleView.hidden = true;
-  elements.mapFrame.removeAttribute("src");
   closeTechnology();
   const url = new URL("../" + src.split("/").map(encodeURIComponent).join("/"), document.baseURI).href;
   if (elements.imageViewImg.getAttribute("src") !== url) {
