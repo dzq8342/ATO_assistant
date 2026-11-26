@@ -77,12 +77,6 @@ final class LocalSecondScreenServer {
     });
   }
 
-  boolean isRunning() {
-    synchronized (lock) {
-      return serverSocket != null && !serverSocket.isClosed();
-    }
-  }
-
   List<String> start() throws IOException {
     synchronized (lock) {
       if (serverSocket != null && !serverSocket.isClosed()) return urls();
@@ -95,8 +89,6 @@ final class LocalSecondScreenServer {
       serverSocket = next;
       executor = Executors.newCachedThreadPool();
       executor.execute(this::acceptLoop);
-      // 私人版：第二屏开着时常驻前台服务，锁屏后局域网服务照常响应。
-      SecondScreenKeepAliveService.start(context);
       return urls();
     }
   }
@@ -114,7 +106,6 @@ final class LocalSecondScreenServer {
   }
 
   void stop() {
-    SecondScreenKeepAliveService.stop(context);
     backupHttp.clear();
     synchronized (lock) {
       if (serverSocket != null) {
@@ -212,9 +203,6 @@ final class LocalSecondScreenServer {
   }
 
   private void handle(Socket socket) {
-    // 私人版：有设备在连第二屏（第二屏页面每 1.5 秒会请求一次），记下时间；
-    // 保持唤醒因 30 分钟没人连而自动停下后，再有人连上就恢复。
-    SecondScreenKeepAliveService.noteRequest(context);
     try (Socket connection = socket) {
       connection.setSoTimeout(10_000);
       // 表头用 ISO-8859-1 读：1 字节 = 1 字符，无损，所以后面能按字符读请求体再还原成 UTF-8。
