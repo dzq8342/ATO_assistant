@@ -1230,6 +1230,18 @@ window.CustomTraits?.ready.then(() => {
   if (activeMode === "aibp") applyBattleLayout();
 });
 
+// 私人版：iPad 的 Safari 不理会网页的「禁止缩放」设置：快速点两下会缩放整个页面。
+// 第二屏只用来显示，这里只拦双击：连续两次轻点的第二次不交给 Safari。双指捏合不拦
+// （地图、剧情书、科技树照常用双指缩放）。
+(() => {
+  let lastTouchEnd = 0;
+  document.addEventListener("touchend", (event) => {
+    const now = Date.now();
+    if (now - lastTouchEnd < 350 && event.cancelable) event.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
+})();
+
 checkConnection();
 
 // A material map arriving after startup is an optional enhancement of the latest

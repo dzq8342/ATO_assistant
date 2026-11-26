@@ -1225,3 +1225,5 @@ h1 {
 #storyView.is-dragging, #imageView.is-dragging { cursor: grabbing; user-select: none; }
 #storyView.local-zoomed, #imageView.local-zoomed { overflow: hidden !important; }
 
+/* 私人版：iPad Safari 双击会缩放整个页面；manipulation 关掉双击缩放（拖动、捏合由页面自己处理）。 */
+html, body { touch-action: manipulation; }
