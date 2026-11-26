@@ -2577,50 +2577,97 @@ elements.searchInput.addEventListener("keydown", (event) => {
   searchTilesById();
 });
 // 私人版：地图区域手势缩放，替代原左栏滑块。双指捏合（以两指中点为中心）缩放，电脑上
-// Ctrl+滚轮缩放（以鼠标位置为中心）。范围沿用滑块的 50%–410%；松手后取整到 10% 并存档。
+// Ctrl+滚轮缩放（以鼠标位置为中心；第二屏不用按 Ctrl）。范围沿用滑块的 50%–410%。
 // 第二屏同样响应手势，但只在本机生效（第二屏不存档），之后主控台推送的地图更新也保留
 // 这个本地比例。
+//
+// 缩放过程中不重新排版：只给整张地图加一个放大/平移的变换，交给显卡直接缩放画面，
+// 一百多张地块图片不用每一帧都重新计算大小、重画，所以跟手。手指松开（滚轮停下）后
+// 才按新比例正式排一次版，并且只改大小、不重建地块（不重新解码图片）。
+// 主地图页松手后比例取整到 10% 并存档；第二屏不取整，松手时画面不跳。
 if (elements.tileGridViewport) {
   const viewport = elements.tileGridViewport;
-  let liveZoom = state.mapZoom;
+  const grid = elements.tileGrid;
   let pinch = null;
   let commitTimer = 0;
+  // 进行中的缩放：base 是开始时已排版的比例，s 是在它基础上的画面倍数，(tx, ty) 是平移；
+  // (gx, gy) 是开始时地图左上角相对视口的位置（缩放过程中不滚动，所以一直不变）。
+  let gesture = null;
 
   const clampZoom = (value) => Math.max(50, Math.min(410, value));
+  const liveZoom = () => (gesture ? gesture.base * gesture.s : state.mapZoom);
+
+  function beginGesture() {
+    if (gesture) return gesture;
+    const viewportRect = viewport.getBoundingClientRect();
+    const gridRect = grid.getBoundingClientRect();
+    gesture = {
+      base: state.mapZoom,
+      s: 1,
+      tx: 0,
+      ty: 0,
+      gx: gridRect.left - viewportRect.left,
+      gy: gridRect.top - viewportRect.top,
+    };
+    grid.style.transformOrigin = "0 0";
+    grid.style.willChange = "transform";
+    return gesture;
+  }
+
+  function applyGesture() {
+    grid.style.transform = `translate(${gesture.tx}px, ${gesture.ty}px) scale(${gesture.s})`;
+  }
 
   // 把缩放比例改为 next，并让视口内 (fx, fy) 处的地图内容保持不动。
   function zoomViewportTo(next, fx, fy) {
-    next = clampZoom(next);
-    const previous = liveZoom;
-    if (Math.abs(next - previous) < 0.01) return;
-    const ratio = next / previous;
-    const left = viewport.scrollLeft;
-    const top = viewport.scrollTop;
-    // 地图在滚动内容里的起点：第二屏给地图加了 50vh/50vw 的外边距，主地图页为 0。
-    // 缩放只改变地图本身，外边距不随之变化，所以先换算到地图坐标再缩放。
-    const viewportRect = viewport.getBoundingClientRect();
-    const gridRect = elements.tileGrid.getBoundingClientRect();
-    const offsetX = gridRect.left - viewportRect.left + left;
-    const offsetY = gridRect.top - viewportRect.top + top;
-    liveZoom = next;
-    elements.tileGrid.style.setProperty("--map-zoom", `${next}%`);
-    viewport.scrollLeft = (left + fx - offsetX) * ratio + offsetX - fx;
-    viewport.scrollTop = (top + fy - offsetY) * ratio + offsetY - fy;
+    const g = beginGesture();
+    const scale = clampZoom(next) / g.base;
+    if (Math.abs(scale - g.s) < 0.0001) return;
+    const px = (fx - g.gx - g.tx) / g.s;
+    const py = (fy - g.gy - g.ty) / g.s;
+    g.tx = fx - g.gx - px * scale;
+    g.ty = fy - g.gy - py * scale;
+    g.s = scale;
+    applyGesture();
+  }
+
+  function panGesture(dx, dy) {
+    const g = beginGesture();
+    g.tx += dx;
+    g.ty += dy;
+    applyGesture();
   }
 
   function commitZoom() {
     window.clearTimeout(commitTimer);
-    const normalized = normalizeMapZoom(liveZoom);
-    if (normalized !== liveZoom) {
-      const rect = viewport.getBoundingClientRect();
-      zoomViewportTo(normalized, rect.width / 2, rect.height / 2);
-    }
-    liveZoom = normalized;
-    if (secondScreenMode) secondScreenLocalZoom = normalized;
-    if (state.mapZoom === normalized) return;
-    state.mapZoom = normalized;
+    commitTimer = 0;
+    if (!gesture) return;
+    const g = gesture;
+    gesture = null;
+    let zoom = clampZoom(g.base * g.s);
+    if (!secondScreenMode) zoom = normalizeMapZoom(zoom);
+    // 视口正中那一点的地图内容，排版后仍放在正中。
+    const cx = viewport.clientWidth / 2;
+    const cy = viewport.clientHeight / 2;
+    const px = (cx - g.gx - g.tx) / g.s;
+    const py = (cy - g.gy - g.ty) / g.s;
+    const ratio = zoom / g.base;
+    grid.style.transform = "";
+    grid.style.willChange = "";
+    grid.style.setProperty("--map-zoom", `${zoom}%`);
+    // 排版后再量地图在滚动内容里的起点（第二屏有 50vh/50vw 外边距；主地图页比视口窄时
+    // 位置也会变），再滚到让那一点回到正中。
+    const viewportRect = viewport.getBoundingClientRect();
+    const gridRect = grid.getBoundingClientRect();
+    const offsetX = gridRect.left - viewportRect.left + viewport.scrollLeft;
+    const offsetY = gridRect.top - viewportRect.top + viewport.scrollTop;
+    viewport.scrollLeft = offsetX + px * ratio - cx;
+    viewport.scrollTop = offsetY + py * ratio - cy;
+    if (secondScreenMode) secondScreenLocalZoom = zoom;
+    if (state.mapZoom === zoom) return;
+    state.mapZoom = zoom;
     saveState();
-    renderTiles();
+    // 比例只影响地图的宽度（--map-zoom），上面已经改好；不再整张重建地块。
     renderControls();
   }
 
@@ -2636,9 +2683,8 @@ if (elements.tileGridViewport) {
 
   viewport.addEventListener("touchstart", (event) => {
     if (event.touches.length !== 2) return;
-    liveZoom = state.mapZoom;
     const p = touchPoint(event.touches);
-    pinch = { dist: p.dist, zoom: liveZoom, x: p.x, y: p.y };
+    pinch = { dist: p.dist, zoom: liveZoom(), x: p.x, y: p.y };
   }, { passive: true });
 
   viewport.addEventListener("touchmove", (event) => {
@@ -2646,8 +2692,7 @@ if (elements.tileGridViewport) {
     event.preventDefault();
     const p = touchPoint(event.touches);
     // 两指一起移动时跟着平移，再以当前中点缩放
-    viewport.scrollLeft -= p.x - pinch.x;
-    viewport.scrollTop -= p.y - pinch.y;
+    panGesture(p.x - pinch.x, p.y - pinch.y);
     pinch.x = p.x;
     pinch.y = p.y;
     zoomViewportTo(pinch.zoom * p.dist / pinch.dist, p.x, p.y);
@@ -2665,17 +2710,17 @@ if (elements.tileGridViewport) {
   viewport.addEventListener("wheel", (event) => {
     if (!event.ctrlKey && !secondScreenMode) return;
     event.preventDefault();
-    if (!pinch) liveZoom = commitTimer ? liveZoom : state.mapZoom;
     const rect = viewport.getBoundingClientRect();
-    zoomViewportTo(liveZoom * (event.deltaY < 0 ? 1.1 : 1 / 1.1), event.clientX - rect.left, event.clientY - rect.top);
+    zoomViewportTo(liveZoom() * (event.deltaY < 0 ? 1.1 : 1 / 1.1), event.clientX - rect.left, event.clientY - rect.top);
     window.clearTimeout(commitTimer);
-    commitTimer = window.setTimeout(() => { commitTimer = 0; commitZoom(); }, 250);
+    if (!pinch) commitTimer = window.setTimeout(commitZoom, 250);
   }, { passive: false });
 
   if (secondScreenMode) {
     let drag = null;
     viewport.addEventListener("pointerdown", (event) => {
       if (event.pointerType !== "mouse" || event.button !== 0) return;
+      commitZoom();
       drag = { x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop, id: event.pointerId };
       viewport.setPointerCapture?.(event.pointerId);
       viewport.classList.add("is-dragging");
