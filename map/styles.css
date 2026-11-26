@@ -887,7 +887,8 @@ body.second-screen-map .tile-grid-viewport {
   height: 100vh;
   max-height: none;
   border-radius: 0;
-  touch-action: pan-x pan-y;
+  /* 私人版：拖动和捏合都由 app.js 自己处理（浏览器滚动会和捏合缩放抢手势）。 */
+  touch-action: none;
 }
 
 body.second-screen-map .tile-grid {

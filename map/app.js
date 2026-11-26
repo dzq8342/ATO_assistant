@@ -2681,14 +2681,15 @@ if (elements.tileGridViewport) {
     };
   }
 
+  // 第二屏的触摸全部走下面的 pointer 处理（见 secondScreenMode 分支）。
   viewport.addEventListener("touchstart", (event) => {
-    if (event.touches.length !== 2) return;
+    if (secondScreenMode || event.touches.length !== 2) return;
     const p = touchPoint(event.touches);
     pinch = { dist: p.dist, zoom: liveZoom(), x: p.x, y: p.y };
   }, { passive: true });
 
   viewport.addEventListener("touchmove", (event) => {
-    if (!pinch || event.touches.length !== 2) return;
+    if (secondScreenMode || !pinch || event.touches.length !== 2) return;
     event.preventDefault();
     const p = touchPoint(event.touches);
     // 两指一起移动时跟着平移，再以当前中点缩放
@@ -2699,7 +2700,7 @@ if (elements.tileGridViewport) {
   }, { passive: false });
 
   const endPinch = (event) => {
-    if (!pinch || event.touches.length >= 2) return;
+    if (secondScreenMode || !pinch || event.touches.length >= 2) return;
     pinch = null;
     commitZoom();
   };
@@ -2716,28 +2717,103 @@ if (elements.tileGridViewport) {
     if (!pinch) commitTimer = window.setTimeout(commitZoom, 250);
   }, { passive: false });
 
+  // 私人版：第二屏的拖动和捏合都由这里处理（地图区域 touch-action: none）。
+  // 原来单指拖动交给浏览器滚动：一根手指先动了一下、浏览器开始滚动以后，第二根手指落下
+  // 的捏合就拦不住了，浏览器的滚动和这里的缩放互相抢，缩放不跟手。现在一根手指（或鼠标
+  // 左键）拖动、两根手指捏合，都在这里算；松手后按拖动速度惯性滑行一段，手感接近原生滚动。
   if (secondScreenMode) {
+    const pointers = new Map();
     let drag = null;
+    let inertia = 0;
+    const local = (event) => {
+      const rect = viewport.getBoundingClientRect();
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    };
+    const stopInertia = () => {
+      if (inertia) window.cancelAnimationFrame(inertia);
+      inertia = 0;
+    };
+    const startDrag = (point) => {
+      drag = { x: point.x, y: point.y, left: viewport.scrollLeft, top: viewport.scrollTop, samples: [{ t: performance.now(), x: point.x, y: point.y }] };
+    };
+    const startPinch = () => {
+      const [a, b] = [...pointers.values()];
+      pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, zoom: liveZoom(), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      drag = null;
+    };
+    const fling = (vx, vy) => {
+      let last = performance.now();
+      const step = (now) => {
+        const dt = Math.min(48, now - last);
+        last = now;
+        viewport.scrollLeft -= vx * dt;
+        viewport.scrollTop -= vy * dt;
+        const decay = Math.pow(0.995, dt);
+        vx *= decay;
+        vy *= decay;
+        inertia = Math.hypot(vx, vy) > 0.02 ? window.requestAnimationFrame(step) : 0;
+      };
+      inertia = window.requestAnimationFrame(step);
+    };
     viewport.addEventListener("pointerdown", (event) => {
-      if (event.pointerType !== "mouse" || event.button !== 0) return;
-      commitZoom();
-      drag = { x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop, id: event.pointerId };
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      stopInertia();
+      if (!pinch) commitZoom();
+      pointers.set(event.pointerId, local(event));
       viewport.setPointerCapture?.(event.pointerId);
-      viewport.classList.add("is-dragging");
+      if (pointers.size === 1) {
+        startDrag(pointers.get(event.pointerId));
+        viewport.classList.add("is-dragging");
+      } else if (pointers.size === 2) {
+        startPinch();
+      }
       event.preventDefault();
     });
     viewport.addEventListener("pointermove", (event) => {
-      if (!drag || event.pointerId !== drag.id) return;
-      viewport.scrollLeft = drag.left - (event.clientX - drag.x);
-      viewport.scrollTop = drag.top - (event.clientY - drag.y);
+      if (!pointers.has(event.pointerId)) return;
+      const point = local(event);
+      pointers.set(event.pointerId, point);
+      if (pinch && pointers.size >= 2) {
+        const [a, b] = [...pointers.values()];
+        const cx = (a.x + b.x) / 2;
+        const cy = (a.y + b.y) / 2;
+        panGesture(cx - pinch.x, cy - pinch.y);
+        pinch.x = cx;
+        pinch.y = cy;
+        zoomViewportTo(pinch.zoom * (Math.hypot(a.x - b.x, a.y - b.y) || 1) / pinch.dist, cx, cy);
+      } else if (drag) {
+        viewport.scrollLeft = drag.left - (point.x - drag.x);
+        viewport.scrollTop = drag.top - (point.y - drag.y);
+        const now = performance.now();
+        drag.samples.push({ t: now, x: point.x, y: point.y });
+        while (drag.samples.length > 2 && now - drag.samples[0].t > 100) drag.samples.shift();
+      }
     });
-    const stopDrag = () => {
-      drag = null;
-      viewport.classList.remove("is-dragging");
+    const release = (event) => {
+      if (!pointers.has(event.pointerId)) return;
+      pointers.delete(event.pointerId);
+      if (pinch && pointers.size < 2) {
+        pinch = null;
+        commitZoom();
+        // 捏合后剩下一根手指：接着拖动，不惯性。
+        if (pointers.size === 1) startDrag([...pointers.values()][0]);
+        return;
+      }
+      if (!pointers.size) {
+        viewport.classList.remove("is-dragging");
+        const samples = drag?.samples || [];
+        drag = null;
+        if (event.type !== "pointerup" || samples.length < 2) return;
+        const first = samples[0];
+        const last = samples[samples.length - 1];
+        const dt = performance.now() - first.t;
+        if (dt <= 0 || performance.now() - last.t > 80) return;
+        fling((last.x - first.x) / dt, (last.y - first.y) / dt);
+      }
     };
-    viewport.addEventListener("pointerup", stopDrag);
-    viewport.addEventListener("pointercancel", stopDrag);
-    viewport.addEventListener("lostpointercapture", stopDrag);
+    viewport.addEventListener("pointerup", release);
+    viewport.addEventListener("pointercancel", release);
+    viewport.addEventListener("wheel", stopInertia, { passive: true });
   }
 }
 elements.showBackToggle.addEventListener("change", () => {
